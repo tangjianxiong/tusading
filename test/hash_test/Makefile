@@ -1,0 +1,20 @@
+SOURCE = hash_test.c ../../src/hash.c	
+OBJ = hash_test.o hash.o	#将.c文件转为.o文件
+INCLUDES = -I./hdr	#头文件路径
+
+
+TARGET = hash_test
+CC = gcc
+
+$(TARGET): $(OBJ)	
+	@mkdir -p output/	#创建一个目录，用于存放已编译的目标
+	$(CC) $(OBJ)  -o output/$(TARGET)
+
+hash.o: ../../src/hash.c
+	$(CC) $(INCLUDES) -c ../../src/hash.c
+hash_test.o: hash_test.c
+	$(CC) $(INCLUDES) -c hash_test.c
+
+.PHONY: clean
+clean:
+	rm -rf $(OBJ) output/
