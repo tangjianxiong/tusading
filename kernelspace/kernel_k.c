@@ -8,17 +8,15 @@
 #include <asm/uaccess.h>
 #include <net/netlink.h>
 #include <net/sock.h>
-#include <linux/string.h>
 #define NETLINK_TEST (25)
 static dev_t devId;
 static struct class *cls = NULL;
 struct sock *nl_sk = NULL;
 
-static void message_unpack(const unsigned char *in, unsigned int inlen, char *sendid, char *recvid, char *msgtype, char *out)
+static void message_unpack(const unsigned char *in, unsigned int inlen, char *sendid, char *recvid, char *out)
 {
     *sendid = in[1];
     *recvid = in[0];
-    *msgtype = in[2];
     memcpy(out, in + 1, inlen - 1);
 }
 static void hello_cleanup(void)
@@ -61,12 +59,7 @@ static void netlink_input(struct sk_buff *__skb)
     char recvstr[100] = "kkThe kernel has received the message!\n";
     char send;
     char recv;
-    char msgtype;
     char errmsg[] = "kkillegal communication!";
-    char conmsg[] = "kkConnection has not been established!";
-    char conmsg1[] = "krConnection success!";
-    int csb = 0;
-    int csc = 0;
 
     if (!__skb)
     {
@@ -82,87 +75,34 @@ static void netlink_input(struct sk_buff *__skb)
     nlh = nlmsg_hdr(skb);
     memset(str, 0, sizeof(str));
     memcpy(str, NLMSG_DATA(nlh), sizeof(str));
-    message_unpack(str, sizeof(str), &send, &recv, &msgtype, str1);
+    message_unpack(str, sizeof(str), &send, &recv, str1);
     printk(KERN_INFO "receive message (pid:%d):  %s\n", nlh->nlmsg_pid, str1);
     printk(KERN_INFO "the sender:%c\n", send);
     printk(KERN_INFO "receiver:%c\n", recv);
-    printk(KERN_INFO "message type:%c\n", msgtype);
     printk(KERN_INFO "space:%d\n", NLMSG_SPACE(0));
     printk(KERN_INFO "size:%d\n", nlh->nlmsg_len);
     netlink_send(nlh->nlmsg_pid, recvstr, sizeof(recvstr));
 
-    if (msgtype == 'r')
+    if (recv == 'b')
+    {
+        if (send == 'c')
+            netlink_send(nlh->nlmsg_pid, errmsg, sizeof(errmsg));
+        else
+            netlink_send(101, str1, sizeof(str1));
+    }
+    else if (recv == 'c')
     {
         if (send == 'b')
-        {
-            netlink_send(100, str1, sizeof(str1));
-        }
-        else if (send == 'c')
-        {
-            netlink_send(100, str1, sizeof(str1));
-        }
+            netlink_send(nlh->nlmsg_pid, errmsg, sizeof(errmsg));
         else
-        {
-            if (recv == 'b')
-            {
-                // if (strcmp(str1, "bryes") == 0)
-                // {
-                csb = 1;
-                netlink_send(101, conmsg1, sizeof(conmsg1));
-                // }
-            }
-            if (recv == 'a')
-            {
-                // if (strcmp(str1, "bryes") == 0)
-                // {
-                csc = 1;
-                netlink_send(102, conmsg1, sizeof(conmsg1));
-                // }
-            }
-        }
+            netlink_send(102, str1, sizeof(str1));
     }
+    else if (recv == 'a')
+        netlink_send(100, str1, sizeof(str1));
     else
     {
-        /*
-            对非请求类消息处理，首先判断通信是否合法，如果合法则判断连接是否建立
-            建立连接则转发数据
-        */
-        if (recv == 'b')
-        {
-            if (send == 'c')
-                netlink_send(nlh->nlmsg_pid, errmsg, sizeof(errmsg));
-            else
-                netlink_send(101, str1, sizeof(str1));
-        }
-        else if (recv == 'c')
-        {
-            if (send == 'b')
-                netlink_send(nlh->nlmsg_pid, errmsg, sizeof(errmsg));
-            else
-                netlink_send(102, str1, sizeof(str1));
-        }
-        else if (recv == 'a')
-        {
-            if (send == 'b')
-            {
-                if (csb == 0)
-                    netlink_send(101, conmsg, sizeof(conmsg));
-                else
-                    netlink_send(100, str1, sizeof(str1));
-            }
-            if (send == 'c')
-            {
-                if (csc == 0)
-                    netlink_send(102, conmsg, sizeof(conmsg));
-                else
-                    netlink_send(100, str1, sizeof(str1));
-            }
-        }
-        else
-        {
-            printk(KERN_INFO "illegal communication!");
-            netlink_send(nlh->nlmsg_pid, errmsg, sizeof(errmsg));
-        }
+        printk(KERN_INFO "illegal communication!");
+        netlink_send(nlh->nlmsg_pid, errmsg, sizeof(errmsg));
     }
 }
 
@@ -225,4 +165,4 @@ module_init(netlink_init);
 module_exit(netlink_exit);
 
 MODULE_LICENSE("GPL");
-MODULE_AUTHOR("TJX");
+MODULE_AUTHOR("tjx");

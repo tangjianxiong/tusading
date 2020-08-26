@@ -18,7 +18,6 @@
 #define TEST_PID (101)
 char s_hashstr[50][MAX_MSG_SIZE];
 int s_hashstr_i = 0;
-int cs = 1;
 int netlink_create_socket(void)
 {
     //create a socket
@@ -163,14 +162,7 @@ void *thread_recv_message(void *arg)
         {
             UnPack(buf, len, &send, &msgtype, encode_msg);
             if (send == 'k')
-            {
-                if (msgtype == 'r')
-                {
-                    cs = 0;
-                }
                 printf("[kernel message]:%s", encode_msg);
-            }
-
             if (msgtype == 'm')
             {
                 Decode(encode_msg, strlen(encode_msg), msg);
@@ -199,12 +191,9 @@ int main()
     unsigned char sendbuf_pack[MAX_MSG_SIZE];
     unsigned char buf[MAX_MSG_SIZE]; //接收消息
     unsigned char buf_hash[MAX_MSG_SIZE];
-    unsigned char passwd[MAX_MSG_SIZE];
-    unsigned char passwd_send[MAX_MSG_SIZE];
     pthread_t tid;
     char recv;
     char msgtype;
-
     //creat socket
     sock_fd = netlink_create_socket();
     if (sock_fd == -1)
@@ -222,17 +211,16 @@ int main()
     //Create socket and initialize successfully
     printf("Initialization succeeded.");
     pthread_create(&tid, NULL, thread_recv_message, NULL);
-
     while (1)
     {
-        while (cs)
-        {
-            printf("please enter the passwd to connect with a:\n");
-            fgets(passwd, sizeof(passwd), stdin);
-            Pack(passwd, strlen(passwd), 'a', 'b', 'r', passwd_send);
-            netlink_send_message(sock_fd, passwd_send, strlen(passwd_send) + 1, 0, 0);
-        }
-
+        /*
+        发送消息流程
+        1. 获取原始消息和消息的去向（recv）
+        2. 根据原始消息计算HASH值，依次存入字符串数组s_hashstr[50]中
+        3. 将消息进行编码，得到encodesendbuf
+        4. 打包，得到recv+send+msgtype+encodesendbuff
+        5. 将消息发送给内核k
+        */
         printf("\nplease enter the message:(enter the 'exit' to stop)\n");
         fgets(sendbuf, sizeof(sendbuf), stdin);
         Hash_Calculate(sendbuf, strlen(sendbuf), s_hashstr[s_hashstr_i]);

@@ -137,9 +137,6 @@ void *thread_recv_message(void *arg)
     unsigned char msg[2048];
     unsigned char hashstr1[16];
     unsigned char hash_send[20];
-    unsigned char sendmsg[MAX_MSG_SIZE];
-    char yes[] = "yes";
-    char no[] = "no";
     int i = 0;
     while (1)
     {
@@ -181,20 +178,6 @@ void *thread_recv_message(void *arg)
             {
                 Hash_verify(s_hashstr[i], encode_msg);
                 i++;
-            }
-            if (msgtype == 'r')
-            {
-                Decode(encode_msg, strlen(encode_msg), msg);
-                if (Passwd_Vertify(msg))
-                {
-                    Pack(yes, strlen(yes), send, 'a', 'r', sendmsg);
-                    netlink_send_message(sock_fd, sendmsg, strlen(sendmsg) + 1, 0, 0);
-                }
-                else
-                {
-                    Pack(no, strlen(no), send, 'a', 'r', sendmsg);
-                    netlink_send_message(sock_fd, sendmsg, strlen(sendmsg) + 1, 0, 0);
-                }
             }
         }
     }

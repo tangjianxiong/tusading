@@ -236,18 +236,3 @@ void Print_HexData(char *src, long len)
 	}
 	printf("\n");
 }
-
-int Passwd_Vertify(char *str)
-{
-	char passwd[] = "tusading\n";
-	if (strcmp(passwd, str) == 0)
-	{
-		printf("password check success!\n");
-		return 1;
-	}
-	else
-	{
-		printf("password check failure!\n");
-		return 1;
-	}
-}
