@@ -186,6 +186,7 @@ int main()
 {
     int sock_fd;
     int len;
+    char *find;
     unsigned char sendbuf[MAX_MSG_SIZE]; //缓存输入数据
     unsigned char sendbuf_encode[MAX_MSG_SIZE];
     unsigned char sendbuf_pack[MAX_MSG_SIZE];
@@ -223,6 +224,11 @@ int main()
         */
         printf("\nplease enter the message:(enter the 'exit' to stop)\n");
         fgets(sendbuf, sizeof(sendbuf), stdin);
+
+        find = strchr(sendbuf, '\n');
+        if (find)
+            *find = '\0';
+
         Hash_Calculate(sendbuf, strlen(sendbuf), s_hashstr[s_hashstr_i]);
         printf("[HASH]The original hash value:");
         Print_HexData(s_hashstr[s_hashstr_i], 16);
