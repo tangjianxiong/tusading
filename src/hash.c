@@ -37,7 +37,7 @@ static const WORD32 T[64] = {
 	0x6fa87e4f, 0xfe2ce6e0, 0xa3014314, 0x4e0811a1,
 	0xf7537e82, 0xbd3af235, 0x2ad7d2bb, 0xeb86d391};
 
-static void word32tobytes(const WORD32 *input, char *output)
+static void word32_to_bytes(const WORD32 *input, char *output)
 {
 	int j = 0;
 	while (j < 4 * 4)
@@ -131,7 +131,7 @@ static void digest(const WORD32 *m, WORD32 *d)
 	}
 }
 
-static void bytestoword32(WORD32 *x, const char *pt)
+static void bytes_to_word32(WORD32 *x, const char *pt)
 {
 	int i;
 	for (i = 0; i < 16; i++)
@@ -172,13 +172,13 @@ static int converte(WORD32 *x, const char *pt, int num, int old_status)
 		new_status = 1;
 		pt = buff;
 	}
-	bytestoword32(x, pt);
+	bytes_to_word32(x, pt);
 	if (num <= (64 - 9))
 		new_status = 2;
 	return new_status;
 }
 
-int Hash_Calculate(unsigned char *message, long len, unsigned char *output)
+int hash_calculate(unsigned char *message, long len, unsigned char *output)
 {
 	WORD32 d[4];
 	char str[] = "\0";
@@ -205,11 +205,11 @@ int Hash_Calculate(unsigned char *message, long len, unsigned char *output)
 		d[3] += d_old[3];
 		i += numbytes;
 	}
-	word32tobytes(d, output);
+	word32_to_bytes(d, output);
 	return 1;
 }
 
-int Hash_verify(unsigned char *hashstr1, unsigned char *hashstr2)
+int hash_verify(unsigned char *hashstr1, unsigned char *hashstr2)
 {
 	if (strcmp(hashstr1, hashstr2) == 0)
 	{
@@ -223,7 +223,7 @@ int Hash_verify(unsigned char *hashstr1, unsigned char *hashstr2)
 	}
 }
 
-void Print_HexData(char *src, long len)
+void print_hexData(char *src, long len)
 {
 	int i = 0;
 	for (; i < len; i++)

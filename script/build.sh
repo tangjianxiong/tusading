@@ -1,5 +1,5 @@
 #!/bin/bash
-cd ../
+cd ~/tusading
 cd kernelspace/
 make
 mv kernel_k.ko ../out/

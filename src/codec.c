@@ -122,7 +122,7 @@ static const unsigned char base64de[] = {
 	/* 'x', 'y', 'z', '{', '|', '}', '~', del, */
 	49, 50, 51, 255, 255, 255, 255, 255};
 
-int Encode(const unsigned char *in, unsigned int inlen, char *out)
+int msg_encode(const unsigned char *in, unsigned int inlen, char *out)
 {
 	int s;
 	unsigned int i;
@@ -173,7 +173,7 @@ int Encode(const unsigned char *in, unsigned int inlen, char *out)
 	return j;
 }
 
-int Decode(const char *in, unsigned int inlen, unsigned char *out)
+int msg_decode(const char *in, unsigned int inlen, unsigned char *out)
 {
 	unsigned int i;
 	unsigned int j;

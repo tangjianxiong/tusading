@@ -160,23 +160,23 @@ void *thread_recv_message(void *arg)
 
         if (netlink_recv_message(sock_fd, buf, &len) == 0)
         {
-            UnPack(buf, len, &send, &msgtype, encode_msg);
+            unpack(buf, len, &send, &msgtype, encode_msg);
             if (send == 'k')
                 printf("[kernel message]:%s", encode_msg);
             if (msgtype == 'm')
             {
-                Decode(encode_msg, strlen(encode_msg), msg);
+                msg_decode(encode_msg, strlen(encode_msg), msg);
                 printf("\n[message]recv the msg:%s ", msg);
                 printf("the sender is:%c\n", send);
-                Hash_Calculate(msg, strlen(msg), hashstr1);
+                hash_calculate(msg, strlen(msg), hashstr1);
                 printf("[HASH]");
-                Print_HexData(hashstr1, 16);
-                Pack(hashstr1, 16, send, 'a', 'h', hash_send);
+                print_hexData(hashstr1, 16);
+                pack(hashstr1, 16, send, 'a', 'h', hash_send);
                 netlink_send_message(sock_fd, hash_send, strlen(hash_send) + 1, 0, 0);
             }
             if (msgtype == 'h')
             {
-                Hash_verify(s_hashstr[i], encode_msg);
+                hash_verify(s_hashstr[i], encode_msg);
                 i++;
             }
         }
@@ -227,17 +227,17 @@ int main()
         find = strchr(sendbuf, '\n'); //查找换行符
         if (find)                     //如果find不为空指针
             *find = '\0';             //就把一个空字符放在这里
-        Hash_Calculate(sendbuf, strlen(sendbuf), s_hashstr[s_hashstr_i]);
+        hash_calculate(sendbuf, strlen(sendbuf), s_hashstr[s_hashstr_i]);
         printf("[HASH]The original hash value:");
-        Print_HexData(s_hashstr[s_hashstr_i], 16);
+        print_hexData(s_hashstr[s_hashstr_i], 16);
         s_hashstr_i++;
-        Encode(sendbuf, strlen(sendbuf), sendbuf_encode);
+        msg_encode(sendbuf, strlen(sendbuf), sendbuf_encode);
         printf("[CODEC]the encoded message is:%s\n", sendbuf_encode);
         printf("please enter the recv:\n");
         scanf("%c", &recv);
         getchar();
 
-        Pack(sendbuf_encode, strlen(sendbuf_encode), recv, 'a', 'm', sendbuf_pack);
+        pack(sendbuf_encode, strlen(sendbuf_encode), recv, 'a', 'm', sendbuf_pack);
         printf("[PACK]the packed message is:%s\n", sendbuf_pack);
         // if (strcmp(sendbuf, "exit\n") == 0)
         //     break;

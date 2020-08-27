@@ -4,16 +4,14 @@ NAME_C = client_c
 
 TARGET = $(NAME_A) $(NAME_B) $(NAME_C)
 SOURCE_A =hash.c codec.c encapsulation.c server_a.c
-SOURCE_B =hash.c codec.c encapsulation.c client_b.c 
+SOURCE_B =hash.c codec.c encapsulation.c client_b.c
 SOURCE_C =hash.c codec.c encapsulation.c client_c.c
-
 OBJ_A = $(patsubst %.c, %.o, $(SOURCE_A))
 OBJ_B = $(patsubst %.c, %.o, $(SOURCE_B))
 OBJ_C = $(patsubst %.c, %.o, $(SOURCE_C))
 
 
 INCLUDE_COMMON = -I./hdr/
-
 CC = aarch64-linux-gnu-gcc
 
 all: $(TARGET)

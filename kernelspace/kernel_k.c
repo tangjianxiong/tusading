@@ -8,10 +8,14 @@
 #include <asm/uaccess.h>
 #include <net/netlink.h>
 #include <net/sock.h>
+#include <linux/debugfs.h>
 #define NETLINK_TEST (25)
 static dev_t devId;
 static struct class *cls = NULL;
 struct sock *nl_sk = NULL;
+static u32 normal_num;
+static u32 illegal_num;
+static struct dentry *root_d;
 
 static void message_unpack(const unsigned char *in, unsigned int inlen, char *sendid, char *recvid, char *out)
 {
@@ -110,9 +114,18 @@ static __init int netlink_init(void)
 {
     int result;
     struct netlink_kernel_cfg nkc;
+    /*create debugfs root directory*/
+    root_d = debugfs_create_dir("communiation_debugfs", NULL);
+    if (!root_d)
+    {
+        printk(KERN_INFO "[debugfs]error create root dir\n");
+        return 1;
+    }
+    debugfs_create_u32("normal_num", 0664, root_d, &normal_num);
+    debugfs_create_u32("illegal_num", 0664, root_d, &illegal_num);
 
     printk(KERN_WARNING "netlink init start!\n");
-
+    /*注册设备节点*/
     if ((result = alloc_chrdev_region(&devId, 0, 1, "stone-alloc-dev")) != 0)
     {
         printk(KERN_WARNING "register dev id error:%d\n", result);
