@@ -16,6 +16,7 @@
 #define MAX_PAYLOAD (1024)
 #define MAX_MSG_SIZE (1024)
 #define TEST_PID (101)
+#define THREAD_NUMBER 3
 char s_hashstr[50][MAX_MSG_SIZE];
 int s_hashstr_i = 0;
 int netlink_create_socket(void)
@@ -127,7 +128,7 @@ int netlink_recv_message(int sock_fd, unsigned char *message, int *len)
 }
 void *thread_recv_message(void *arg)
 {
-    printf("Start receiving messages...\n");
+    int thrd_num = (int)arg;
     int len;
     int sock_fd = 3;
     char send = '0';
@@ -135,9 +136,10 @@ void *thread_recv_message(void *arg)
     unsigned char buf[MAX_MSG_SIZE];
     unsigned char encode_msg[MAX_MSG_SIZE];
     unsigned char msg[MAX_MSG_SIZE];
-    unsigned char s_hashstr1[16];
+    unsigned char hashstr1[16];
     unsigned char hash_send[20];
     int i = 0;
+    printf("recv_thread %d start receiving messages...\n", thrd_num);
     while (1)
     {
         /*
@@ -160,18 +162,19 @@ void *thread_recv_message(void *arg)
 
         if (netlink_recv_message(sock_fd, buf, &len) == 0)
         {
+            //printf("[thread]thread %d has recv the msg.\n", thrd_num);
             unpack(buf, len, &send, &msgtype, encode_msg);
             if (send == 'k')
-                printf("[kernel message]:%s", encode_msg);
+                printf("[kernel message]:%s\n", encode_msg);
             if (msgtype == 'm')
             {
                 msg_decode(encode_msg, strlen(encode_msg), msg);
-                printf("\n[message]recv the msg:%s ", msg);
+                printf("[message]recv the msg:%s ", msg);
                 printf("the sender is:%c\n", send);
-                hash_calculate(msg, strlen(msg), s_hashstr1);
+                hash_calculate(msg, strlen(msg), hashstr1);
                 printf("[HASH]");
-                print_hexData(s_hashstr1, 16);
-                pack(s_hashstr1, 16, send, 'b', 'h', hash_send);
+                print_hexData(hashstr1, 16);
+                pack(hashstr1, 16, send, 'b', 'h', hash_send);
                 netlink_send_message(sock_fd, hash_send, strlen(hash_send) + 1, 0, 0);
             }
             if (msgtype == 'h')
@@ -192,7 +195,8 @@ int main()
     unsigned char sendbuf_pack[MAX_MSG_SIZE];
     unsigned char buf[MAX_MSG_SIZE]; //接收消息
     unsigned char buf_hash[MAX_MSG_SIZE];
-    pthread_t tid;
+    pthread_t tid[THREAD_NUMBER];
+    int no, res;
     char recv;
     char msgtype;
     //creat socket
@@ -211,7 +215,17 @@ int main()
     }
     //Create socket and initialize successfully
     printf("Initialization succeeded.");
-    pthread_create(&tid, NULL, thread_recv_message, NULL);
+    //pthread_create(&tid, NULL, thread_recv_message, NULL);
+    for (no = 0; no < THREAD_NUMBER; no++)
+    {
+        res = pthread_create(&tid[no], NULL, thread_recv_message, (void *)no);
+        if (res != 0)
+        {
+            printf("create msg_recv_thread %d failed\n", no);
+            exit(res);
+        }
+    }
+
     while (1)
     {
         /*
@@ -227,6 +241,7 @@ int main()
         find = strchr(sendbuf, '\n');
         if (find)
             *find = '\0';
+
         hash_calculate(sendbuf, strlen(sendbuf), s_hashstr[s_hashstr_i]);
         printf("[HASH]The original hash value:");
         print_hexData(s_hashstr[s_hashstr_i], 16);
