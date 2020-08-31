@@ -13,12 +13,39 @@
 #define PID_A (100)
 #define PID_B (101)
 #define PID_C (102)
+#define DATA_MSG 'm'
+#define DATA_CON 'r'
+#define DATA_KMSG 'k'
+#define DATA_HASH 'h'
+#define DATA_FILE 'f'
+#define NAME_A 'a'
+#define NAME_B 'b'
+#define NAME_C 'c'
 static dev_t devId;
 static struct class *cls = NULL;
 struct sock *nl_sk = NULL;
 static u32 normal_num;
 static u32 illegal_num;
+static int connect_sign_b = 0;
+static int connect_sign_c = 0;
 static struct dentry *root_d;
+static int getconsign(char a)
+{
+    int res;
+    switch (a)
+    {
+    case NAME_B:
+        res = connect_sign_b;
+        break;
+    case NAME_C:
+        res = connect_sign_c;
+        break;
+    default:
+        res = -1;
+        break;
+    }
+    return res;
+}
 static int getpid(char a)
 {
     int res;
@@ -61,10 +88,11 @@ int judge(char a)
     }
     return res;
 }
-static void message_unpack(const unsigned char *in, unsigned int inlen, char *sendid, char *recvid, char *out)
+static void message_unpack(const unsigned char *in, unsigned int inlen, char *sendid, char *recvid, char *msgtype, char *out)
 {
     *sendid = in[1];
     *recvid = in[0];
+    *msgtype = in[2];
     memcpy(out, in + 1, inlen - 1);
 }
 static void hello_cleanup(void)
@@ -106,8 +134,10 @@ static void netlink_input(struct sk_buff *__skb)
     struct nlmsghdr *nlh;
     char send; //the msg sender
     char recv; //the msg receiver
+    char msgtype;
     char kmsg_illegalmsg[] = "kkillegal communication!";
-    char kmsg_remsg[] = "kkThe kernel has received the message!\n";
+    char kmsg_remsg[] = "kkThe kernel has received the message!";
+    char kmsg_conerr[] = "kkConnection has not been established!";
 
     if (!__skb)
     {
@@ -123,44 +153,55 @@ static void netlink_input(struct sk_buff *__skb)
     nlh = nlmsg_hdr(skb);
     memset(str, 0, sizeof(str));
     memcpy(str, NLMSG_DATA(nlh), sizeof(str));
-    message_unpack(str, sizeof(str), &send, &recv, str1);
-    printk(KERN_INFO "receive message (pid:%d):  %s\n", nlh->nlmsg_pid, str1);
-    printk(KERN_INFO "the sender:%c\n", send);
-    printk(KERN_INFO "receiver:%c\n", recv);
-    printk(KERN_INFO "space:%d\n", NLMSG_SPACE(0));
-    printk(KERN_INFO "size:%d\n", nlh->nlmsg_len);
+    message_unpack(str, sizeof(str), &send, &recv, &msgtype, str1);
+    printk(KERN_INFO "[receive message (pid:%d)]:%s\n", nlh->nlmsg_pid, str1);
+    printk(KERN_INFO "[the sender]:%c\n", send);
+    printk(KERN_INFO "[receiver]:%c\n", recv);
+    printk(KERN_INFO "[type]:%c\n", msgtype);
+    printk(KERN_INFO "[space]:%d\n", NLMSG_SPACE(0));
+    printk(KERN_INFO "[size]:%d\n", nlh->nlmsg_len);
     netlink_send(nlh->nlmsg_pid, kmsg_remsg, sizeof(kmsg_remsg));
-
-    // if (recv == 'b')
-    // {
-    //     if (send == 'c')
-    //         netlink_send(nlh->nlmsg_pid, kmsg_illegalmsg, sizeof(kmsg_illegalmsg));
-    //     else
-    //         netlink_send(101, str1, sizeof(str1));
-    // }
-    // else if (recv == 'c')
-    // {
-    //     if (send == 'b')
-    //         netlink_send(nlh->nlmsg_pid, kmsg_illegalmsg, sizeof(kmsg_illegalmsg));
-    //     else
-    //         netlink_send(102, str1, sizeof(str1));
-    // }
-    // else if (recv == 'a')
-    //     netlink_send(100, str1, sizeof(str1));
-    // else
-    // {
-    //     printk(KERN_INFO "illegal communication!");
-    //     netlink_send(nlh->nlmsg_pid, kmsg_illegalmsg, sizeof(kmsg_illegalmsg));
-    // }
-    if ((judge(recv) == 1 && judge(send) == 2) || (judge(recv) == 2 && judge(send) == 1))
+    switch (msgtype)
     {
-        /* communication between ab and ac */
-        netlink_send(getpid(recv), str1, sizeof(str1));
-    }
-    else
-    {
-        printk(KERN_INFO "illegal communication!");
-        netlink_send(nlh->nlmsg_pid, kmsg_illegalmsg, sizeof(kmsg_illegalmsg));
+    // case DATA_CON:
+    //     if (send == NAME_A)
+    //     {
+    //         if ((strcmp(str1, "yes") == 0) && send == NAME_B)
+    //             connect_sign_b = 1;
+    //         if ((strcmp(str1, "yes") == 0) && send == NAME_C)
+    //             connect_sign_c = 1;
+    //     }
+    //     netlink_send(getpid(recv), str1, sizeof(str1));
+    //     break;
+    default:
+        if ((judge(recv) == 1 && judge(send) == 2) || (judge(recv) == 2 && judge(send) == 1))
+        {
+            // if (recv == NAME_A)
+            // {
+            //     if (getconsign(send) == 1)
+            //         netlink_send(getpid(recv), str1, sizeof(str1));
+            //     else
+            //     {
+            //         netlink_send(nlh->nlmsg_pid, kmsg_conerr, sizeof(kmsg_conerr));
+            //     }
+            // }
+            // else
+            // {
+            //     if (getconsign(recv) == 1)
+            //         netlink_send(getpid(recv), str1, sizeof(str1));
+            //     else
+            //     {
+            //         netlink_send(nlh->nlmsg_pid, kmsg_conerr, sizeof(kmsg_conerr));
+            //     }
+            // }
+            netlink_send(getpid(recv), str1, sizeof(str1));
+        }
+        else
+        {
+            printk(KERN_INFO "illegal communication!");
+            netlink_send(nlh->nlmsg_pid, kmsg_illegalmsg, sizeof(kmsg_illegalmsg));
+        }
+        break;
     }
 }
 
@@ -180,7 +221,7 @@ static __init int netlink_init(void)
 
     printk(KERN_WARNING "netlink init start!\n");
     /*注册设备节点*/
-    if ((result = alloc_chrdev_region(&devId, 0, 1, "stone-alloc-dev")) != 0)
+    if ((result = alloc_chrdev_region(&devId, 0, 1, "tjx-alloc-dev")) != 0)
     {
         printk(KERN_WARNING "register dev id error:%d\n", result);
         goto err;
@@ -189,7 +230,7 @@ static __init int netlink_init(void)
     {
         printk(KERN_WARNING "register dev id success!\n");
     }
-    cls = class_create(THIS_MODULE, "stone-class");
+    cls = class_create(THIS_MODULE, "tjx-class");
     if (IS_ERR(cls))
     {
         printk(KERN_WARNING "create class error!\n");
@@ -211,11 +252,11 @@ static __init int netlink_init(void)
     nl_sk = netlink_kernel_create(&init_net, NETLINK_TEST, &nkc);
     if (!nl_sk)
     {
-        printk(KERN_ERR "[netlink] create netlink socket error!\n");
+        printk(KERN_ERR "[netlink]create netlink socket error!\n");
         goto err;
     }
 
-    printk(KERN_ALERT "netlink init success!\n");
+    printk(KERN_ALERT "[netlink]netlink init success!\n");
     return 0;
 err:
     hello_cleanup();

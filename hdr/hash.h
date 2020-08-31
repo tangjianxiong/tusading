@@ -5,4 +5,3 @@
 void print_hexData(char *src, long len);
 int hash_calculate(unsigned char *message, long len, unsigned char *output);
 int hash_verify(unsigned char *hashstr1, unsigned char *hashstr2);
-int passwd_vertify(char *str);

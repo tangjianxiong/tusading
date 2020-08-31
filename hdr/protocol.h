@@ -6,29 +6,34 @@
 #define PID_B (101)
 #define PID_C (102)
 
-/* 数据类型定义 */
-#define DATA_NONE	0x00
-#define DATA_ONLINE 0x01 
-#define DATA_CHAT	0x02
-#define DATA_LOGIN	0x04
-#define DATA_LOGOUT	0x08
-#define DATA_FILE	0x10
-
+/*The data type definition*/
+#define DATA_MSG 'm'
+#define DATA_CON 'r'
+#define DATA_KMSG 'k'
+#define DATA_HASH 'h'
+#define DATA_FILE 'f'
+#define NAME_A 'a'
+#define NAME_B 'b'
+#define NAME_C 'c'
+#define NETLINK_TEST (25)
+#define MAX_PAYLOAD (1024)
+#define MAX_MSG_SIZE (1024)
+#define THREAD_NUMBER 3
 /* 最大数据内容长度 */
 #define MAX_DATA_SIZE 256
 
-/* 网络协议包 */
+/* 网络数据包 */
 typedef struct NET_PACKET
 {
 	/* 发送方地址 */
 	int src_id;
-	
+
 	/* 接收方地址 */
 	int dst_id;
-	
+
 	/* 数据类型 */
 	int data_type;
-	
+
 	/* 数据内容 */
 	char data[MAX_DATA_SIZE];
 } Net_packet;

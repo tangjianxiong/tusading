@@ -1,144 +1,26 @@
-#include <sys/stat.h>
-#include <unistd.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/socket.h>
-#include <string.h>
-#include <asm/types.h>
-#include <linux/netlink.h>
-#include <linux/socket.h>
-#include <errno.h>
-#include <pthread.h>
 #include "../hdr/encapsulation.h"
 #include "../hdr/codec.h"
 #include "../hdr/hash.h"
 #include "../hdr/connect.h"
-#define NETLINK_TEST (25)
-#define MAX_PAYLOAD (1024)
-#define MAX_MSG_SIZE (1024)
-#define THREAD_NUMBER 3
+#include "../hdr/protocol.h"
+#include "../hdr/netlink.h"
 char s_hashstr[50][MAX_MSG_SIZE];
 int s_hashstr_i = 0;
 int s_hashstr_vertify_i = 0;
-int netlink_create_socket(void)
-{
-    //create a socket
-    return socket(AF_NETLINK, SOCK_RAW, NETLINK_TEST);
-}
-
-int netlink_bind(int sock_fd)
-{
-    struct sockaddr_nl addr;
-
-    memset(&addr, 0, sizeof(struct sockaddr_nl));
-    addr.nl_family = AF_NETLINK;
-    addr.nl_pid = PID_A;
-    addr.nl_groups = 0;
-
-    return bind(sock_fd, (struct sockaddr *)&addr, sizeof(struct sockaddr_nl));
-}
-
-int netlink_send_message(int sock_fd, const unsigned char *message, int len,
-                         unsigned int pid, unsigned int group)
-{
-    struct nlmsghdr *nlh = NULL;
-    struct sockaddr_nl dest_addr;
-    struct iovec iov;
-    struct msghdr msg;
-
-    if (!message)
-    {
-        return -1;
-    }
-
-    //create message
-    nlh = (struct nlmsghdr *)malloc(NLMSG_SPACE(len));
-    if (!nlh)
-    {
-        perror("malloc");
-        return -2;
-    }
-    nlh->nlmsg_len = NLMSG_SPACE(len);
-    nlh->nlmsg_pid = PID_A;
-    nlh->nlmsg_flags = 0;
-    memcpy(NLMSG_DATA(nlh), message, len);
-
-    iov.iov_base = (void *)nlh;
-    iov.iov_len = nlh->nlmsg_len;
-    memset(&dest_addr, 0, sizeof(struct sockaddr_nl));
-    dest_addr.nl_family = AF_NETLINK;
-    dest_addr.nl_pid = pid;
-    dest_addr.nl_groups = group;
-
-    memset(&msg, 0, sizeof(struct msghdr));
-    msg.msg_name = (void *)&dest_addr;
-    msg.msg_namelen = sizeof(struct sockaddr_nl);
-    msg.msg_iov = &iov;
-    msg.msg_iovlen = 1;
-
-    //send message
-    if (sendmsg(sock_fd, &msg, 0) < 0)
-    {
-        printf("send error!\n");
-        free(nlh);
-        return -3;
-    }
-
-    free(nlh);
-    return 0;
-}
-
-int netlink_recv_message(int sock_fd, unsigned char *message, int *len)
-{
-    struct nlmsghdr *nlh = NULL;
-    struct sockaddr_nl source_addr;
-    struct iovec iov;
-    struct msghdr msg;
-
-    if (!message || !len)
-    {
-        return -1;
-    }
-
-    //create message
-    nlh = (struct nlmsghdr *)malloc(NLMSG_SPACE(MAX_PAYLOAD));
-    if (!nlh)
-    {
-        perror("malloc");
-        return -2;
-    }
-    iov.iov_base = (void *)nlh;
-    iov.iov_len = NLMSG_SPACE(MAX_PAYLOAD);
-    memset(&source_addr, 0, sizeof(struct sockaddr_nl));
-    memset(&msg, 0, sizeof(struct msghdr));
-    msg.msg_name = (void *)&source_addr;
-    msg.msg_namelen = sizeof(struct sockaddr_nl);
-    msg.msg_iov = &iov;
-    msg.msg_iovlen = 1;
-
-    if (recvmsg(sock_fd, &msg, 0) < 0)
-    {
-        printf("recvmsg error!\n");
-        return -3;
-    }
-    *len = nlh->nlmsg_len - NLMSG_SPACE(0);
-    memcpy(message, (unsigned char *)NLMSG_DATA(nlh), *len);
-
-    free(nlh);
-    return 0;
-}
 void *thread_recv_message(void *arg)
 {
     int thrd_num = *((int *)arg);
     int len;
     int sock_fd = 3;
-    char send = '0';
-    char msgtype = '0';
+    char send;
+    char msgtype;
     unsigned char buf[MAX_MSG_SIZE];
     unsigned char encode_msg[MAX_MSG_SIZE];
     unsigned char msg[MAX_MSG_SIZE];
     unsigned char hashstr1[16];
     unsigned char hash_send[20];
+    unsigned char replystr1[] = "yes";
+    unsigned char replystr2[] = "no";
     //printf("recv_thread %d start receiving messages...\n", thrd_num);
     while (1)
     {
@@ -171,26 +53,41 @@ void *thread_recv_message(void *arg)
 
         if (netlink_recv_message(sock_fd, buf, &len) == 0)
         {
-            //printf("[thread]thread %d has recv the msg.\n", thrd_num);
             unpack(buf, len, &send, &msgtype, encode_msg);
-            if (send == 'k')
-                printf("[kernel message]:%s\n", encode_msg);
-            if (msgtype == 'm')
+            switch (msgtype)
             {
+            case DATA_KMSG:
+                printf("[kernel message]:%s\n", encode_msg);
+                break;
+            case DATA_MSG:
                 msg_decode(encode_msg, strlen(encode_msg), msg);
                 printf("[message]recv the msg:%s ", msg);
-                printf("the sender is:%c\n", send);
+                printf("[sender]%c\n", send);
                 hash_calculate(msg, strlen(msg), hashstr1);
                 printf("[HASH]");
                 print_hexData(hashstr1, 16);
-                pack(hashstr1, 16, send, 'a', 'h', hash_send);
-                netlink_send_message(sock_fd, hash_send, strlen(hash_send) + 1, 0, 0);
-            }
-            if (msgtype == 'h')
-            {
+                pack(hashstr1, 16, send, NAME_A, DATA_HASH, hash_send);
+                netlink_send_message(sock_fd, hash_send, strlen(hash_send) + 1, PID_A, 0, 0);
+                break;
+            case DATA_HASH:
                 printf("the %d hash vertify\n", s_hashstr_vertify_i);
                 hash_verify(s_hashstr[s_hashstr_vertify_i], encode_msg);
                 s_hashstr_vertify_i++;
+                break;
+            case DATA_CON:
+                if (passwd_vertify(encode_msg, send))
+                {
+                    pack(replystr1, strlen(replystr1), send, NAME_A, DATA_CON, msg);
+                    netlink_send_message(sock_fd, msg, strlen(msg) + 1, PID_A, 0, 0);
+                }
+                else
+                {
+                    pack(replystr2, strlen(replystr2), send, NAME_A, DATA_CON, msg);
+                    netlink_send_message(sock_fd, msg, strlen(msg) + 1, PID_A, 0, 0);
+                }
+                break;
+            default:
+                break;
             }
         }
     }
@@ -209,28 +106,11 @@ int main()
     int no, res;
     char recv;
     char msgtype;
-    void *void_pointer;
     //creat socket
-    sock_fd = netlink_create_socket();
-    if (sock_fd == -1)
-    {
-        printf("create socket error!\n");
-        return -1;
-    }
-    //bind the socket to the local address.
-    if (netlink_bind(sock_fd) < 0)
-    {
-        perror("bind");
-        close(sock_fd);
-        exit(EXIT_FAILURE);
-    }
-    //Create socket and initialize successfully
-    printf("Initialization succeeded.");
-    //pthread_create(&tid, NULL, thread_recv_message, NULL);
+    sock_fd = netlink_init(PID_A);
     for (no = 0; no < THREAD_NUMBER; no++)
     {
-        void_pointer = &no;
-        res = pthread_create(&tid[no], NULL, thread_recv_message, void_pointer);
+        res = pthread_create(&tid[no], NULL, thread_recv_message, &no);
         if (res != 0)
         {
             printf("create msg_recv_thread %d failed\n", no);
@@ -249,6 +129,7 @@ int main()
         5. 将消息发送给内核k
         */
         printf("\nplease enter the message:(enter the 'exit' to stop)\n");
+        printf("[input msg]:");
         fgets(sendbuf, sizeof(sendbuf), stdin);
 
         find = strchr(sendbuf, '\n');
@@ -256,12 +137,13 @@ int main()
             *find = '\0';
 
         hash_calculate(sendbuf, strlen(sendbuf), s_hashstr[s_hashstr_i]);
-        printf("[HASH]The original hash value:");
-        print_hexData(s_hashstr[s_hashstr_i], 16);
+        //printf("[HASH]The original hash value:");
+        //print_hexData(s_hashstr[s_hashstr_i], 16);
         s_hashstr_i++;
         msg_encode(sendbuf, strlen(sendbuf), sendbuf_encode);
-        printf("[CODEC]the encoded message is:%s\n", sendbuf_encode);
+        //printf("[CODEC]the encoded message is:%s\n", sendbuf_encode);
         printf("please enter the recv:\n");
+        printf("[input recvier]:");
         scanf("%c", &recv);
         getchar();
 
@@ -270,7 +152,7 @@ int main()
         // if (strcmp(sendbuf, "exit\n") == 0)
         //     break;
         //send message
-        netlink_send_message(sock_fd, sendbuf_pack, strlen(sendbuf_pack) + 1, 0, 0);
+        netlink_send_message(sock_fd, sendbuf_pack, strlen(sendbuf_pack) + 1, PID_A, 0, 0);
     }
 
     close(sock_fd);
