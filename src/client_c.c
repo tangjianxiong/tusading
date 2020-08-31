@@ -12,13 +12,14 @@
 #include "../hdr/encapsulation.h"
 #include "../hdr/codec.h"
 #include "../hdr/hash.h"
+#include "../hdr/connect.h"
 #define NETLINK_TEST (25)
 #define MAX_PAYLOAD (1024)
 #define MAX_MSG_SIZE (1024)
-#define TEST_PID (102)
 #define THREAD_NUMBER 3
 char s_hashstr[50][MAX_MSG_SIZE];
 int s_hashstr_i = 0;
+int s_hashstr_vertify_i = 0;
 int netlink_create_socket(void)
 {
     //create a socket
@@ -31,7 +32,7 @@ int netlink_bind(int sock_fd)
 
     memset(&addr, 0, sizeof(struct sockaddr_nl));
     addr.nl_family = AF_NETLINK;
-    addr.nl_pid = TEST_PID;
+    addr.nl_pid = PID_C;
     addr.nl_groups = 0;
 
     return bind(sock_fd, (struct sockaddr *)&addr, sizeof(struct sockaddr_nl));
@@ -58,7 +59,7 @@ int netlink_send_message(int sock_fd, const unsigned char *message, int len,
         return -2;
     }
     nlh->nlmsg_len = NLMSG_SPACE(len);
-    nlh->nlmsg_pid = TEST_PID;
+    nlh->nlmsg_pid = PID_C;
     nlh->nlmsg_flags = 0;
     memcpy(NLMSG_DATA(nlh), message, len);
 
@@ -128,7 +129,7 @@ int netlink_recv_message(int sock_fd, unsigned char *message, int *len)
 }
 void *thread_recv_message(void *arg)
 {
-    int thrd_num = (int)arg;
+    int thrd_num = *((int *)arg);
     int len;
     int sock_fd = 3;
     char send = '0';
@@ -138,7 +139,6 @@ void *thread_recv_message(void *arg)
     unsigned char msg[MAX_MSG_SIZE];
     unsigned char hashstr1[16];
     unsigned char hash_send[20];
-    int i = 0;
     printf("recv_thread %d start receiving messages...\n", thrd_num);
     while (1)
     {
@@ -162,7 +162,7 @@ void *thread_recv_message(void *arg)
 
         if (netlink_recv_message(sock_fd, buf, &len) == 0)
         {
-            //printf("[thread]thread %d has recv the msg.\n", thrd_num);
+            printf("[thread]thread %d has recv the msg.\n", thrd_num);
             unpack(buf, len, &send, &msgtype, encode_msg);
             if (send == 'k')
                 printf("[kernel message]:%s\n", encode_msg);
@@ -179,8 +179,9 @@ void *thread_recv_message(void *arg)
             }
             if (msgtype == 'h')
             {
-                hash_verify(s_hashstr[i], encode_msg);
-                i++;
+                printf("the %d hash vertify\n", s_hashstr_vertify_i);
+                hash_verify(s_hashstr[s_hashstr_vertify_i], encode_msg);
+                s_hashstr_vertify_i++;
             }
         }
     }
@@ -199,6 +200,7 @@ int main()
     int no, res;
     char recv;
     char msgtype;
+    void *void_pointer;
     //creat socket
     sock_fd = netlink_create_socket();
     if (sock_fd == -1)
@@ -218,7 +220,8 @@ int main()
     //pthread_create(&tid, NULL, thread_recv_message, NULL);
     for (no = 0; no < THREAD_NUMBER; no++)
     {
-        res = pthread_create(&tid[no], NULL, thread_recv_message, (void *)no);
+        void_pointer = &no;
+        res = pthread_create(&tid[no], NULL, thread_recv_message, void_pointer);
         if (res != 0)
         {
             printf("create msg_recv_thread %d failed\n", no);
