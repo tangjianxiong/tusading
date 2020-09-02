@@ -79,7 +79,8 @@ int main()
         printf("you are not yet been connected, please enter the password to connect\n");
         printf("[enter the passwd]:");
         fgets(passwd, sizeof(passwd), stdin);
-        find = strchr(sendbuf, '\n');
+
+        find = strchr(passwd, '\n');
         if (find)
             *find = '\0';
         pack(passwd, strlen(passwd), NAME_A, NAME_B, DATA_CON, sendbuf_con);

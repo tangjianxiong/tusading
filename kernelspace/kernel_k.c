@@ -184,7 +184,10 @@ static void netlink_input(struct sk_buff *__skb)
             if ((str1[0] == 'y') && (recv == NAME_C))
                 connect_sign_c = 1;
         }
-        netlink_send(getpid(recv), str1, sizeof(str1));
+        else
+        {
+            netlink_send(getpid(recv), str1, sizeof(str1));
+        }
         break;
     default:
         if ((judge(recv) == 1 && judge(send) == 2) || (judge(recv) == 2 && judge(send) == 1))

@@ -59,6 +59,7 @@ int main()
     int sock_fd;
     int len;
     char *find;
+    char *find1;
     unsigned char sendbuf[MAX_MSG_SIZE]; //缓存输入数据
     unsigned char sendbuf_encode[MAX_MSG_SIZE];
     unsigned char sendbuf_pack[MAX_MSG_SIZE];
@@ -79,7 +80,7 @@ int main()
         printf("you are not yet been connected, please enter the password to connect\n");
         printf("[enter the passwd]:");
         fgets(passwd, sizeof(passwd), stdin);
-        find = strchr(sendbuf, '\n');
+        find = strchr(passwd, '\n');
         if (find)
             *find = '\0';
         pack(passwd, strlen(passwd), NAME_A, NAME_C, DATA_CON, sendbuf_con);
