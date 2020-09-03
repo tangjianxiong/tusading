@@ -12,15 +12,15 @@ void *thread_recv_message(void *arg)
     int thrd_num = *((int *)arg);
     int len;
     int sock_fd = 3;
-    char send;
-    char msgtype;
+    char send = 0;
+    char msgtype = 0;
     unsigned char buf[MAX_MSG_SIZE];
     unsigned char encode_msg[MAX_MSG_SIZE];
     unsigned char msg[MAX_MSG_SIZE];
     unsigned char hashstr1[16];
     unsigned char hash_send[20];
-    unsigned char replystr1[] = "yes";
-    unsigned char replystr2[] = "no";
+    unsigned char replystr1[4] = "\0";
+    unsigned char replystr2[3] = "\0";
     //printf("recv_thread %d start receiving messages...\n", thrd_num);
     while (1)
     {
@@ -57,7 +57,8 @@ void *thread_recv_message(void *arg)
             switch (msgtype)
             {
             case DATA_KMSG:
-                printf("[kernel message]:%s\n", encode_msg);
+                //printf("[kernel message]:%s\n", encode_msg);
+                memset(encode_msg, 0, sizeof(encode_msg));
                 break;
             case DATA_MSG:
                 msg_decode(encode_msg, strlen(encode_msg), msg);
@@ -68,6 +69,10 @@ void *thread_recv_message(void *arg)
                 print_hexData(hashstr1, 16);
                 pack(hashstr1, 16, send, NAME_A, DATA_HASH, hash_send);
                 netlink_send_message(sock_fd, hash_send, strlen(hash_send) + 1, PID_A, 0, 0);
+                memset(msg, 0, sizeof(msg));
+                memset(hashstr1, 0, sizeof(hashstr1));
+                memset(encode_msg, 0, sizeof(encode_msg));
+                memset(hash_send, 0, sizeof(hash_send));
                 break;
             case DATA_HASH:
                 printf("the %d hash vertify\n", s_hashstr_vertify_i);
@@ -75,6 +80,8 @@ void *thread_recv_message(void *arg)
                 s_hashstr_vertify_i++;
                 break;
             case DATA_CON:
+                strcpy(replystr1, "yes");
+                strcpy(replystr2, "no");
                 if (passwd_vertify(encode_msg, send))
                 {
                     pack(replystr1, strlen(replystr1), send, NAME_A, DATA_CON, msg);
@@ -85,10 +92,13 @@ void *thread_recv_message(void *arg)
                     pack(replystr2, strlen(replystr2), send, NAME_A, DATA_CON, msg);
                     netlink_send_message(sock_fd, msg, strlen(msg) + 1, PID_A, 0, 0);
                 }
+                memset(replystr1, 0, sizeof(replystr1));
+                memset(replystr2, 0, sizeof(replystr2));
                 break;
             default:
                 break;
             }
+            memset(buf, 0, sizeof(sock_fd));
         }
     }
 }
@@ -141,7 +151,8 @@ int main()
         //print_hexData(s_hashstr[s_hashstr_i], 16);
         s_hashstr_i++;
         msg_encode(sendbuf, strlen(sendbuf), sendbuf_encode);
-        //printf("[CODEC]the encoded message is:%s\n", sendbuf_encode);
+        memset(sendbuf, 0, sizeof(sendbuf));
+        printf("[CODEC]the encoded message is:%s\n", sendbuf_encode);
         printf("please enter the recv:\n");
         printf("[input recvier]:");
         scanf("%c", &recv);
@@ -153,6 +164,8 @@ int main()
         //     break;
         //send message
         netlink_send_message(sock_fd, sendbuf_pack, strlen(sendbuf_pack) + 1, PID_A, 0, 0);
+        memset(sendbuf_pack, 0, sizeof(sendbuf_pack));
+        memset(sendbuf_encode, 0, sizeof(sendbuf_encode));
     }
 
     close(sock_fd);
