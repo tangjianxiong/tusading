@@ -114,6 +114,7 @@ static void hello_cleanup(void)
     get_state_i = 0;
     kthread_stop(test_task);
     test_task = NULL;
+    debugfs_remove_recursive(root_d);
 }
 
 static void netlink_send(int pid, uint8_t *message, int len)
@@ -174,51 +175,49 @@ static void netlink_input(struct sk_buff *__skb)
     printk(KERN_INFO "[space]:%d\n", NLMSG_SPACE(0));
     printk(KERN_INFO "[size]:%d\n", nlh->nlmsg_len);
     netlink_send(nlh->nlmsg_pid, kmsg_remsg, sizeof(kmsg_remsg));
-    switch (msgtype)
+    // switch (msgtype)
+    // {
+    // case DATA_CON:
+    //     if (send == NAME_A)
+    //     {
+    //         if ((str1[0] == 'y') && (recv == NAME_B))
+    //             connect_sign_b = 1;
+    //         if ((str1[0] == 'y') && (recv == NAME_C))
+    //             connect_sign_c = 1;
+    //     }
+
+    //         netlink_send(getpid(recv), str1, sizeof(str1));
+    //     break;
+    // default:
+    if ((judge(recv) == 1 && judge(send) == 2) || (judge(recv) == 2 && judge(send) == 1))
     {
-    case DATA_CON:
-        if (send == NAME_A)
-        {
-            if ((str1[0] == 'y') && (recv == NAME_B))
-                connect_sign_b = 1;
-            if ((str1[0] == 'y') && (recv == NAME_C))
-                connect_sign_c = 1;
-        }
-        else
-        {
-            netlink_send(getpid(recv), str1, sizeof(str1));
-        }
-        break;
-    default:
-        if ((judge(recv) == 1 && judge(send) == 2) || (judge(recv) == 2 && judge(send) == 1))
-        {
-            if (recv == NAME_A)
-            {
-                if (getconsign(send) == 1)
-                    netlink_send(getpid(recv), str1, sizeof(str1));
-                else
-                {
-                    netlink_send(nlh->nlmsg_pid, kmsg_conerr, sizeof(kmsg_conerr));
-                }
-            }
-            else
-            {
-                if (getconsign(recv) == 1)
-                    netlink_send(getpid(recv), str1, sizeof(str1));
-                else
-                {
-                    netlink_send(nlh->nlmsg_pid, kmsg_conerr, sizeof(kmsg_conerr));
-                }
-            }
-            netlink_send(getpid(recv), str1, sizeof(str1));
-        }
-        else
-        {
-            printk(KERN_INFO "illegal communication!");
-            netlink_send(nlh->nlmsg_pid, kmsg_illegalmsg, sizeof(kmsg_illegalmsg));
-        }
-        break;
+        // if (recv == NAME_A)
+        // {
+        //     if (getconsign(send) == 1)
+        //         netlink_send(getpid(recv), str1, sizeof(str1));
+        //     else
+        //     {
+        //         netlink_send(nlh->nlmsg_pid, kmsg_conerr, sizeof(kmsg_conerr));
+        //     }
+        // }
+        // else
+        // {
+        //     if (getconsign(recv) == 1)
+        //         netlink_send(getpid(recv), str1, sizeof(str1));
+        //     else
+        //     {
+        //         netlink_send(nlh->nlmsg_pid, kmsg_conerr, sizeof(kmsg_conerr));
+        //     }
+        // }
+        netlink_send(getpid(recv), str1, sizeof(str1));
     }
+    else
+    {
+        printk(KERN_INFO "illegal communication!");
+        netlink_send(nlh->nlmsg_pid, kmsg_illegalmsg, sizeof(kmsg_illegalmsg));
+    }
+    //         break;
+    //     }
 }
 static int thread_get_pstate(void *data)
 {
