@@ -12,7 +12,7 @@ void *thread_recv_message(void *arg)
     int thrd_num = *((int *)arg);
     int len;
     int sock_fd = 3;
-    tangjianxiong char send = 0;
+    char send = 0;
     char msgtype = 0;
     unsigned char buf[MAX_MSG_SIZE];
     unsigned char encode_msg[MAX_MSG_SIZE];
@@ -30,7 +30,7 @@ void *thread_recv_message(void *arg)
             {
             case DATA_KMSG:
                 //printf("[kernel message]:%s\n", encode_msg);
-                memset(encode_msg, 0, sizeof(encode_msg));
+
                 break;
             case DATA_MSG:
                 msg_decode(encode_msg, strlen(encode_msg), msg);
@@ -41,10 +41,7 @@ void *thread_recv_message(void *arg)
                 print_hexData(hashstr1, 16);
                 pack(hashstr1, 16, send, NAME_B, DATA_HASH, hash_send);
                 netlink_send_message(sock_fd, hash_send, strlen(hash_send) + 1, PID_B, 0, 0);
-                memset(msg, 0, sizeof(msg));
-                memset(hashstr1, 0, sizeof(hashstr1));
-                memset(encode_msg, 0, sizeof(encode_msg));
-                memset(hash_send, 0, sizeof(hash_send));
+
                 break;
             case DATA_HASH:
                 printf("the %d hash vertify\n", s_hashstr_vertify_i);
@@ -56,8 +53,15 @@ void *thread_recv_message(void *arg)
             default:
                 break;
             }
-            memset(buf, 0, sizeof(sock_fd));
         }
+        memset(buf, 0, sizeof(sock_fd));
+        memset(msg, 0, sizeof(msg));
+        memset(hashstr1, 0, sizeof(hashstr1));
+        memset(encode_msg, 0, sizeof(encode_msg));
+        memset(hash_send, 0, sizeof(hash_send));
+        send = 0;
+        msgtype = 0;
+        len = 0;
     }
 }
 int main()

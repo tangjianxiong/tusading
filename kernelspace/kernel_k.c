@@ -17,6 +17,9 @@
 #define PID_A (100)
 #define PID_B (101)
 #define PID_C (102)
+#define NETLINK_TEST (25)
+#define MAX_PAYLOAD (1024)
+#define MAX_PACK_SIZE (512)
 #define DATA_MSG 'm'
 #define DATA_CON 'r'
 #define DATA_KMSG 'k'
@@ -39,23 +42,23 @@ static u32 connect_sign_c = 0;
 static struct dentry *root_d;
 /*通过内核线程检测应用程序是否在线*/
 
-static int getconsign(char a)
-{
-    int res;
-    switch (a)
-    {
-    case NAME_B:
-        res = connect_sign_b;
-        break;
-    case NAME_C:
-        res = connect_sign_c;
-        break;
-    default:
-        res = -1;
-        break;
-    }
-    return res;
-}
+// static int getconsign(char a)
+// {
+//     int res;
+//     switch (a)
+//     {
+//     case NAME_B:
+//         res = connect_sign_b;
+//         break;
+//     case NAME_C:
+//         res = connect_sign_c;
+//         break;
+//     default:
+//         res = -1;
+//         break;
+//     }
+//     return res;
+// }
 static int getpid(char a)
 {
     int res;
@@ -143,15 +146,15 @@ static void netlink_send(int pid, uint8_t *message, int len)
 static void netlink_input(struct sk_buff *__skb)
 {
     struct sk_buff *skb;
-    char str[100];
-    char str1[100];
+    char str[MAX_PACK_SIZE];
+    char str1[MAX_PACK_SIZE];
     struct nlmsghdr *nlh;
     char send; //the msg sender
     char recv; //the msg receiver
     char msgtype;
     char kmsg_illegalmsg[] = "kkillegal communication!";
     char kmsg_remsg[] = "kkThe kernel has received the message!";
-    char kmsg_conerr[] = "kkConnection has not been established!";
+    //char kmsg_conerr[] = "kkConnection has not been established!";
 
     if (!__skb)
     {
@@ -185,13 +188,8 @@ static void netlink_input(struct sk_buff *__skb)
     //         if ((str1[0] == 'y') && (recv == NAME_C))
     //             connect_sign_c = 1;
     //     }
-<<<<<<< HEAD
     //     netlink_send(getpid(recv), str1, sizeof(str1));
 
-=======
-
-    //         netlink_send(getpid(recv), str1, sizeof(str1));
->>>>>>> 64e330e7f156abcf8965e85fbc10b301a04ca3de
     //     break;
     // default:
     if ((judge(recv) == 1 && judge(send) == 2) || (judge(recv) == 2 && judge(send) == 1))
@@ -221,13 +219,13 @@ static void netlink_input(struct sk_buff *__skb)
         printk(KERN_INFO "illegal communication!");
         netlink_send(nlh->nlmsg_pid, kmsg_illegalmsg, sizeof(kmsg_illegalmsg));
     }
-<<<<<<< HEAD
     //     break;
     // }
-=======
-    //         break;
-    //     }
->>>>>>> 64e330e7f156abcf8965e85fbc10b301a04ca3de
+    memset(str, 0, sizeof(str));
+    memset(str1, 0, sizeof(str1));
+    send = 0;
+    msgtype = 0;
+    recv = 0;
 }
 static int thread_get_pstate(void *data)
 {
