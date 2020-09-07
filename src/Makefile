@@ -12,20 +12,22 @@ OBJ_C = $(patsubst %.c, %.o, $(SOURCE_C))
 
 
 INCLUDE_COMMON = -I./hdr/
-CC = aarch64-linux-gnu-gcc
+OPENSSL=-L/home/tangjianxiong/tmp/tusading/lib/lib -I/home/tangjianxiong/tmp/tusading/lib/include
+CC =aarch64-linux-gnu-gcc
+OPTION=-lpthread -lssl -lcrypto
 
 all: $(TARGET)
 $(NAME_A):$(OBJ_A)
-	$(CC) $(OBJ_A) -o ../out/$(NAME_A) -lpthread
+	$(CC) $(OBJ_A) -o ../out/$(NAME_A) $(OPENSSL) $(OPTION)
 
 $(NAME_B):$(OBJ_B)
-	$(CC) $(OBJ_B) -o ../out/$(NAME_B) -lpthread
+	$(CC) $(OBJ_B) -o ../out/$(NAME_B) $(OPENSSL) $(OPTION)
 
 $(NAME_C):$(OBJ_C)
-	$(CC) $(OBJ_C) -o ../out/$(NAME_C) -lpthread
+	$(CC) $(OBJ_C) -o ../out/$(NAME_C) $(OPENSSL) $(OPTION)
 
 %.o: %.c 
-	$(CC) $(INCLUDE_COMMON) -c $< -o $@
+	$(CC) $(INCLUDE_COMMON) -c $< -o $@ $(OPENSSL) $(OPTION)
 
 .PHONY: clean
 clean:

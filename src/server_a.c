@@ -4,9 +4,11 @@
 #include "../hdr/connect.h"
 #include "../hdr/protocol.h"
 #include "../hdr/netlink.h"
-char s_hashstr[50][MAX_MSG_SIZE];
-int s_hashstr_i = 0;
-int s_hashstr_vertify_i = 0;
+// char s_hashstr[50][MAX_MSG_SIZE];
+// int s_hashstr_i = 0;
+// int s_hashstr_vertify_i = 0;
+
+char hashstr[MAX_MSG_SIZE];
 void *thread_recv_message(void *arg)
 {
     int thrd_num = *((int *)arg);
@@ -75,12 +77,11 @@ void *thread_recv_message(void *arg)
                 memset(hash_send, 0, sizeof(hash_send));
                 break;
             case DATA_HASH:
-                printf("the %d hash vertify\n", s_hashstr_vertify_i);
-                hash_verify(s_hashstr[s_hashstr_vertify_i], encode_msg);
-                s_hashstr_vertify_i++;
+                hash_verify(hashstr, encode_msg);
+                memset(hashstr, 0, sizeof(hashstr));
                 break;
             case DATA_CON:
-                strcpy(replystr1, "yes");
+                strcpy(replystr1, "y");
                 strcpy(replystr2, "no");
                 if (passwd_vertify(encode_msg, send))
                 {
@@ -92,13 +93,17 @@ void *thread_recv_message(void *arg)
                     pack(replystr2, strlen(replystr2), send, NAME_A, DATA_CON, msg);
                     netlink_send_message(sock_fd, msg, strlen(msg) + 1, PID_A, 0, 0);
                 }
-                memset(replystr1, 0, sizeof(replystr1));
-                memset(replystr2, 0, sizeof(replystr2));
+                bzero(replystr1, sizeof(replystr1));
+                bzero(replystr2, sizeof(replystr2));
+                break;
+            case DATA_FILE:
+                printf("file mode\n");
+                printf("sending the file:%s\n", encode_msg);
                 break;
             default:
                 break;
             }
-            memset(buf, 0, sizeof(sock_fd));
+            bzero(buf, MAX_MSG_SIZE + 1);
         }
     }
 }
@@ -146,10 +151,9 @@ int main()
         if (find)
             *find = '\0';
 
-        hash_calculate(sendbuf, strlen(sendbuf), s_hashstr[s_hashstr_i]);
+        hash_calculate(sendbuf, strlen(sendbuf), hashstr);
         //printf("[HASH]The original hash value:");
         //print_hexData(s_hashstr[s_hashstr_i], 16);
-        s_hashstr_i++;
         msg_encode(sendbuf, strlen(sendbuf), sendbuf_encode);
         memset(sendbuf, 0, sizeof(sendbuf));
         printf("[CODEC]the encoded message is:%s\n", sendbuf_encode);

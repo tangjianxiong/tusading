@@ -9,6 +9,8 @@
 #include <linux/socket.h>
 #include <errno.h>
 #include <pthread.h>
+#include "hdr/md5sum.h"
+#include "../../hdr/hash.h"
 
 #define NETLINK_TEST (25)
 #define MAX_BUFF_SIZE (1024)
@@ -117,7 +119,7 @@ int netlink_recv_message(int sock_fd, unsigned char *message, int *len)
         printf("recvmsg error!\n");
         return -3;
     }
-    *len = nlh->nlmsg_len - NLMSG_SPACE(0);
+    *len = strlen(NLMSG_DATA(nlh));
     memcpy(message, (unsigned char *)NLMSG_DATA(nlh), *len);
 
     free(nlh);
@@ -129,7 +131,9 @@ void *thread_recv_message(void *arg)
     int len;
     int sock_fd = 3;
     char buffer[MAX_BUFF_SIZE];
+    char endstr[] = "end";
     bzero(buffer, MAX_BUFF_SIZE);
+    char hashstr[64] = {0};
     while (1)
     {
         if (netlink_recv_message(sock_fd, buffer, &len) == 0)
@@ -139,6 +143,12 @@ void *thread_recv_message(void *arg)
             strncpy(file_name, buffer, strlen(buffer) > FILE_NAME_MAX_SIZE ? FILE_NAME_MAX_SIZE : strlen(buffer));
             printf("prepare to send file:%s\n", file_name);
             // 打开文件并读取文件数据
+            //计算文件file_name的md5值保存到hashstr
+            bzero(hashstr, sizeof(hashstr));
+            int ret = 0;
+            ret = md5_checksum(file_name, hashstr);
+            //判断md5值计算正确与否
+            printf("%s  %s\n", hashstr, file_name);
             FILE *fp = fopen(file_name, "r");
             if (NULL == fp)
             {
@@ -154,10 +164,18 @@ void *thread_recv_message(void *arg)
                     netlink_send_message(sock_fd, buffer, strlen(buffer) + 1, 0, 0);
                     bzero(buffer, MAX_BUFF_SIZE);
                 }
-
+                netlink_send_message(sock_fd, endstr, strlen(endstr) + 1, 0, 0);
                 // 关闭文件
                 fclose(fp);
+
+                //获取客户端接收到的文件的md5值，进行校验
+                //返回校验结果给客户端
+                netlink_recv_message(sock_fd, buffer, &len);
+                printf("%s  %s\n", buffer, file_name);
+                hash_verify(hashstr, buffer);
                 printf("File:%s Transfer Successful!\n", file_name);
+                bzero(hashstr, sizeof(hashstr));
+                bzero(buffer, sizeof(buffer));
             }
         }
     }

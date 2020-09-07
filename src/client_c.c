@@ -60,7 +60,7 @@ void *thread_recv_message(void *arg)
         }
     }
 }
-int main()
+int main(int argc, char *argv[])
 {
     int sock_fd;
     int len;
@@ -79,7 +79,30 @@ int main()
     char replymsg[MAX_MSG_SIZE];
     char send1;
     char msgtype1;
+    if (2 != argc)
+    {
+        printf("[file mode Usage]./client -f\n");
+        printf("[message mode Usage]./client -m\n");
+        return -1;
+    }
+    if ((strcmp("--help", argv[1]) == 0) || ((strcmp("-h", argv[1]) == 0)))
+    {
+        printf("help\n");
+        return 0;
+    }
     sock_fd = netlink_init(PID_C);
+
+    if ((strcmp("--file", argv[1]) == 0) || ((strcmp("-f", argv[1]) == 0)))
+    {
+        printf("file mode\n");
+        return 0;
+    }
+
+    if ((strcmp("--message", argv[1]) == 0) || ((strcmp("-m", argv[1]) == 0)))
+    {
+        printf("message mode\n");
+        return 0;
+    }
     while (1)
     {
         printf("you are not yet been connected, please enter the password to connect\n");

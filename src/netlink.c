@@ -100,7 +100,7 @@ int netlink_recv_message(int sock_fd, unsigned char *message, int *len)
         printf("recvmsg error!\n");
         return -3;
     }
-    *len = nlh->nlmsg_len - NLMSG_SPACE(0);
+    *len = strlen(NLMSG_DATA(nlh));
     memcpy(message, (unsigned char *)NLMSG_DATA(nlh), *len);
 
     free(nlh);

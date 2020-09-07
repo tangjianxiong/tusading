@@ -9,6 +9,7 @@
 #include <linux/socket.h>
 #include <errno.h>
 #include <pthread.h>
+#include "hdr/md5sum.h"
 #define FILE_NAME_MAX_SIZE (512)
 #define NETLINK_TEST (25)
 #define MAX_PAYLOAD (1024)
@@ -116,7 +117,7 @@ int netlink_recv_message(int sock_fd, unsigned char *message, int *len)
         printf("recvmsg error!\n");
         return -3;
     }
-    *len = nlh->nlmsg_len - NLMSG_SPACE(0);
+    *len = strlen(NLMSG_DATA(nlh));
     memcpy(message, (unsigned char *)NLMSG_DATA(nlh), *len);
 
     free(nlh);
@@ -145,6 +146,7 @@ int main()
     int len;
     unsigned char sendbuf[1024];
     unsigned char buf[2048];
+    char hashstr[64] = {0};
     pthread_t tid;
     char *find;
     //�����׽���
@@ -168,15 +170,14 @@ int main()
     {
         char file_name[FILE_NAME_MAX_SIZE + 1];
         bzero(file_name, FILE_NAME_MAX_SIZE + 1);
-        printf("please enter the filename:\n");
+        printf("1please enter the filename:\n");
         fgets(file_name, sizeof(file_name), stdin);
         find = strchr(file_name, '\n');
         if (find)
             *find = '\0';
         char buffer[BUFFER_SIZE];
         bzero(buffer, BUFFER_SIZE);
-        strncpy(buffer, file_name, strlen(file_name) > BUFFER_SIZE ? BUFFER_SIZE : strlen(file_name));
-        netlink_send_message(sock_fd, buffer, strlen(sendbuf) + 1, 0, 0);
+        netlink_send_message(sock_fd, file_name, strlen(file_name) + 1, 0, 0);
         //打开文件准备写入
         FILE *fp = fopen(file_name, "w");
         if (NULL == fp)
@@ -184,7 +185,7 @@ int main()
             printf("File:\t%s Can Not Open To Write\n", file_name);
             exit(1);
         }
-        printf("file open success!\n");
+        printf("file %s open success!\n", file_name);
         bzero(buffer, BUFFER_SIZE);
         int length = 0;
         while (1)
@@ -192,14 +193,23 @@ int main()
             bzero(buffer, BUFFER_SIZE);
             if (netlink_recv_message(sock_fd, buffer, &len) == 0)
             {
+                if (strcmp(buffer, "end") == 0)
+                    break;
                 printf("recv:%s len:%d\n", buffer, len);
-                int num = fwrite(buffer, sizeof(char), len, fp);
+                int num = fwrite(buffer, sizeof(char), strlen(buffer), fp);
                 printf("success to write %d bytes\n", num);
             }
         }
-
+        fclose(fp);
         // 接收成功后，关闭文件，关闭socket
+        int ret = 0;
+        ret = md5_checksum(file_name, hashstr);
+        printf("%s  %s\n", hashstr, file_name);
+        netlink_send_message(sock_fd, hashstr, strlen(hashstr) + 1, 0, 0);
         printf("Receive File:\t%s From Server IP Successful!\n", file_name);
+        bzero(buffer, sizeof(buffer));
+        bzero(buf, sizeof(buf));
+        bzero(hashstr, sizeof(hashstr));
     }
 
     close(sock_fd);
