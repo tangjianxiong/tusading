@@ -17,9 +17,8 @@
 #define PID_A (100)
 #define PID_B (101)
 #define PID_C (102)
-#define NETLINK_TEST (25)
-#define MAX_PAYLOAD (1024)
-#define MAX_PACK_SIZE (512)
+#define MAX_PAYLOAD (1400)
+#define MAX_PACK_SIZE (1400)
 #define DATA_MSG 'm'
 #define DATA_CON 'r'
 #define DATA_KMSG 'k'
@@ -171,6 +170,7 @@ static void netlink_input(struct sk_buff *__skb)
     memset(str, 0, sizeof(str));
     memcpy(str, NLMSG_DATA(nlh), sizeof(str));
     message_unpack(str, sizeof(str), &send, &recv, &msgtype, str1);
+
     printk(KERN_INFO "[receive message (pid:%d)]:%s\n", nlh->nlmsg_pid, str1);
     printk(KERN_INFO "[the sender]:%c\n", send);
     printk(KERN_INFO "[receiver]:%c\n", recv);
@@ -213,6 +213,7 @@ static void netlink_input(struct sk_buff *__skb)
         //     }
         // }
         netlink_send(getpid(recv), str1, sizeof(str1));
+        printk(KERN_INFO "[sendlen]%ld[end]\n", strlen(str1));
     }
     else
     {

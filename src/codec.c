@@ -3,7 +3,6 @@
 #define BASE64_PAD '='
 #define BASE64DE_FIRST '+'
 #define BASE64DE_LAST 'z'
-
 /* BASE 64 encode table */
 static const char base64en[] = {
 	'A',

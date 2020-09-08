@@ -12,12 +12,16 @@
 #define DATA_KMSG 'k'
 #define DATA_HASH 'h'
 #define DATA_FILE 'f'
+#define DATA_FILE_END 'e'
 #define NAME_A 'a'
 #define NAME_B 'b'
 #define NAME_C 'c'
 #define NETLINK_TEST (25)
-#define MAX_PAYLOAD (1024)
+#define MAX_PAYLOAD (1400)
 #define MAX_MSG_SIZE (1024)
+#define MAX_FILENAME_SIZE (256)
+#define MAX_ENCODE_SIZE (1390)
+#define MAX_PACK_SIZE (1400)
 #define THREAD_NUMBER 3
 /* 最大数据内容长度 */
 #define MAX_DATA_SIZE 256

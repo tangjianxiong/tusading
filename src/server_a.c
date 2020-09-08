@@ -4,11 +4,13 @@
 #include "../hdr/connect.h"
 #include "../hdr/protocol.h"
 #include "../hdr/netlink.h"
+#include "../hdr/md5sum.h"
 // char s_hashstr[50][MAX_MSG_SIZE];
 // int s_hashstr_i = 0;
 // int s_hashstr_vertify_i = 0;
 
 char hashstr[MAX_MSG_SIZE];
+char hashstr_file[64];
 void *thread_recv_message(void *arg)
 {
     int thrd_num = *((int *)arg);
@@ -23,6 +25,13 @@ void *thread_recv_message(void *arg)
     unsigned char hash_send[20];
     unsigned char replystr1[4] = "\0";
     unsigned char replystr2[3] = "\0";
+    char filename[MAX_FILENAME_SIZE] = {0};
+    char buffer_filename[MAX_PACK_SIZE] = {0};
+    char buffer_write[MAX_MSG_SIZE];
+    char buffer_read[MAX_MSG_SIZE];
+    char buffer_encode[MAX_ENCODE_SIZE];
+    char buffer_unpack[MAX_PACK_SIZE];
+    char buffer_pack[MAX_PACK_SIZE];
     //printf("recv_thread %d start receiving messages...\n", thrd_num);
     while (1)
     {
@@ -97,8 +106,56 @@ void *thread_recv_message(void *arg)
                 bzero(replystr2, sizeof(replystr2));
                 break;
             case DATA_FILE:
+                bzero(filename, MAX_FILENAME_SIZE);
+                strncpy(filename, encode_msg, strlen(encode_msg));
+                printf("prepare to send file:%s\n", filename);
                 printf("file mode\n");
-                printf("sending the file:%s\n", encode_msg);
+                printf("sending the file:%s\n", filename);
+                bzero(hashstr_file, sizeof(hashstr_file));
+                int ret = 0;
+                ret = md5_checksum(filename, hashstr_file);
+                printf("%s  %s\n", hashstr_file, filename);
+                //open file and send to client
+                FILE *fp = fopen(filename, "r");
+                if (NULL == fp)
+                {
+                    printf("File:%s Not Found\n", filename);
+                }
+                else
+                {
+                    bzero(buffer_read, MAX_MSG_SIZE);
+                    int length = 0;
+                    // 每读取一段数据，便将其发送给客户端，循环直到文件读完为止
+                    while ((length = fread(buffer_read, sizeof(char), MAX_MSG_SIZE, fp)) > 0)
+                    {
+                        msg_encode(buffer_read, strlen(buffer_read), buffer_encode);
+                        pack(buffer_encode, strlen(buffer_encode), send, NAME_A, 'f', buffer_pack);
+                        netlink_send_message(sock_fd, buffer_pack, strlen(buffer_pack) + 1, PID_A, 0, 0);
+                        printf("send len %d msg\n", length);
+                        bzero(buffer_read, MAX_MSG_SIZE);
+                        bzero(buffer_encode, MAX_MSG_SIZE);
+                        bzero(buffer_pack, MAX_PACK_SIZE);
+                    }
+                    //消息发送完毕，发送文件hash值进行校验。
+                    pack(hashstr_file, strlen(hashstr_file), send, NAME_A, 'e', buffer_pack);
+                    netlink_send_message(sock_fd, buffer_pack, strlen(buffer_pack) + 1, PID_A, 0, 0);
+
+                    // 关闭文件
+                    fclose(fp);
+
+                    //获取客户端接收到的文件的md5值，进行校验
+                    //返回校验结果给客户端
+                    printf("File:%s Transfer Successful!\n", filename);
+                }
+
+                bzero(encode_msg, MAX_MSG_SIZE);
+                bzero(filename, MAX_FILENAME_SIZE);
+                bzero(buffer_encode, MAX_ENCODE_SIZE);
+                bzero(buffer_filename, MAX_PACK_SIZE);
+                bzero(buffer_write, MAX_MSG_SIZE);
+                bzero(buffer_read, MAX_MSG_SIZE);
+                bzero(buffer_pack, MAX_PACK_SIZE);
+                bzero(buffer_unpack, MAX_PACK_SIZE);
                 break;
             default:
                 break;
