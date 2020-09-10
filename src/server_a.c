@@ -18,14 +18,16 @@ void *thread_recv_message(void *arg)
     int sock_fd = 3;
     char send = 0;
     char msgtype = 0;
-    unsigned char buf[MAX_MSG_SIZE];
-    unsigned char encode_msg[MAX_MSG_SIZE];
+    unsigned char buf[MAX_PACK_SIZE];
+    unsigned char encode_msg[MAX_ENCODE_SIZE];
     unsigned char msg[MAX_MSG_SIZE];
     unsigned char hashstr1[16];
     unsigned char hash_send[20];
     unsigned char replystr1[4] = "\0";
     unsigned char replystr2[3] = "\0";
-    char filename[MAX_FILENAME_SIZE] = {0};
+    char filename_download[MAX_FILENAME_SIZE] = {0};
+    char filename_upload_b[MAX_FILENAME_SIZE] = {0};
+    char filename_upload_c[MAX_FILENAME_SIZE] = {0};
     char buffer_filename[MAX_PACK_SIZE] = {0};
     char buffer_write[MAX_MSG_SIZE];
     char buffer_read[MAX_MSG_SIZE];
@@ -105,21 +107,21 @@ void *thread_recv_message(void *arg)
                 bzero(replystr1, sizeof(replystr1));
                 bzero(replystr2, sizeof(replystr2));
                 break;
-            case DATA_FILE:
-                bzero(filename, MAX_FILENAME_SIZE);
-                strncpy(filename, encode_msg, strlen(encode_msg));
-                printf("prepare to send file:%s\n", filename);
+            case DATA_FILE_DOWNLOAD:
+                bzero(filename_download, MAX_FILENAME_SIZE);
+                strncpy(filename_download, encode_msg, strlen(encode_msg));
+                printf("prepare to send file:%s\n", filename_download);
                 printf("file mode\n");
-                printf("sending the file:%s\n", filename);
+                printf("sending the file:%s\n", filename_download);
                 bzero(hashstr_file, sizeof(hashstr_file));
                 int ret = 0;
-                ret = md5_checksum(filename, hashstr_file);
-                printf("%s  %s\n", hashstr_file, filename);
+                ret = md5_checksum(filename_download, hashstr_file);
+                printf("%s  %s\n", hashstr_file, filename_download);
                 //open file and send to client
-                FILE *fp = fopen(filename, "r");
+                FILE *fp = fopen(filename_download, "r");
                 if (NULL == fp)
                 {
-                    printf("File:%s Not Found\n", filename);
+                    printf("File:%s Not Found\n", filename_download);
                 }
                 else
                 {
@@ -128,8 +130,9 @@ void *thread_recv_message(void *arg)
                     // 每读取一段数据，便将其发送给客户端，循环直到文件读完为止
                     while ((length = fread(buffer_read, sizeof(char), MAX_MSG_SIZE, fp)) > 0)
                     {
+                        //usleep(5000);
                         msg_encode(buffer_read, strlen(buffer_read), buffer_encode);
-                        pack(buffer_encode, strlen(buffer_encode), send, NAME_A, 'f', buffer_pack);
+                        pack(buffer_encode, strlen(buffer_encode), send, NAME_A, DATA_FILE_DOWNLOAD, buffer_pack);
                         netlink_send_message(sock_fd, buffer_pack, strlen(buffer_pack) + 1, PID_A, 0, 0);
                         printf("send len %d msg\n", length);
                         bzero(buffer_read, MAX_MSG_SIZE);
@@ -145,11 +148,11 @@ void *thread_recv_message(void *arg)
 
                     //获取客户端接收到的文件的md5值，进行校验
                     //返回校验结果给客户端
-                    printf("File:%s Transfer Successful!\n", filename);
+                    printf("File:%s Transfer Successful!\n", filename_download);
                 }
 
                 bzero(encode_msg, MAX_MSG_SIZE);
-                bzero(filename, MAX_FILENAME_SIZE);
+                bzero(filename_download, MAX_FILENAME_SIZE);
                 bzero(buffer_encode, MAX_ENCODE_SIZE);
                 bzero(buffer_filename, MAX_PACK_SIZE);
                 bzero(buffer_write, MAX_MSG_SIZE);
@@ -157,10 +160,63 @@ void *thread_recv_message(void *arg)
                 bzero(buffer_pack, MAX_PACK_SIZE);
                 bzero(buffer_unpack, MAX_PACK_SIZE);
                 break;
+            case DATA_FILE_UPLOAD:
+                switch (send)
+                {
+                case NAME_B:
+
+                    break;
+                case NAME_C:
+                    bzero(filename_upload_c, MAX_FILENAME_SIZE);
+                    strncpy(filename_upload_c, encode_msg, strlen(encode_msg));
+                    printf("recving the file:%s from C\n", filename_upload_c);
+                    FILE *fp = fopen(filename_upload_c, "w");
+                    if (NULL == fp)
+                    {
+                        printf("File:\t%s Can Not Open To Write\n", filename_upload_c);
+                    }
+                    break;
+                default:
+                    break;
+                }
+
+                break;
+            case DATA_FILE_TXT:
+                switch (send)
+                {
+                case NAME_B:
+
+                    break;
+                case NAME_C:
+                    bzero(buffer_encode, MAX_ENCODE_SIZE);
+                    strncpy(buffer_encode, encode_msg, strlen(encode_msg));
+                    msg_decode(buffer_encode, strlen(buffer_encode), buffer_write);
+                    //printf("[message]%s[len]%d\n", buffer_write, strlen(buffer_write));
+                    //int num = fwrite(buffer_write, sizeof(char), strlen(buffer_write), fp);
+                    printf("success to write  bytes\n");
+                    break;
+                default:
+                    break;
+                }
+                break;
+            case DATA_FILE_END:
+                switch (send)
+                {
+                case NAME_B:
+
+                    break;
+                case NAME_C:
+                    printf("success recv from C\n");
+                    break;
+                default:
+                    break;
+                }
+                break;
             default:
                 break;
             }
-            bzero(buf, MAX_MSG_SIZE + 1);
+            bzero(buf, MAX_MSG_SIZE);
+            bzero(encode_msg, MAX_MSG_SIZE);
         }
     }
 }
@@ -178,6 +234,7 @@ int main()
     int no, res;
     char recv;
     char msgtype;
+
     //creat socket
     sock_fd = netlink_init(PID_A);
     for (no = 0; no < THREAD_NUMBER; no++)

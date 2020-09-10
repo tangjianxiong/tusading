@@ -123,7 +123,7 @@ static void netlink_send(int pid, uint8_t *message, int len)
 {
     struct sk_buff *skb_1;
     struct nlmsghdr *nlh;
-
+    int ret = 0;
     if (!message || !nl_sk)
     {
         return;
@@ -139,14 +139,18 @@ static void netlink_send(int pid, uint8_t *message, int len)
     NETLINK_CB(skb_1).portid = 0;
     NETLINK_CB(skb_1).dst_group = 0;
     memcpy(NLMSG_DATA(nlh), message, len);
-    netlink_unicast(nl_sk, skb_1, pid, MSG_DONTWAIT);
+    ret = netlink_unicast(nl_sk, skb_1, pid, 0);
+    if (ret < 0)
+    {
+        printk(KERN_ALERT "[send error]%d\n", ret);
+    }
 }
-
+char str[MAX_PACK_SIZE];
+char str1[MAX_PACK_SIZE];
 static void netlink_input(struct sk_buff *__skb)
 {
     struct sk_buff *skb;
-    char str[MAX_PACK_SIZE];
-    char str1[MAX_PACK_SIZE];
+
     struct nlmsghdr *nlh;
     char send; //the msg sender
     char recv; //the msg receiver

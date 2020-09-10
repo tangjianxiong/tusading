@@ -1,4 +1,5 @@
 #include "../hdr/encapsulation.h"
+
 #include "../hdr/codec.h"
 #include "../hdr/hash.h"
 #include "../hdr/connect.h"
@@ -15,7 +16,7 @@ void *thread_recv_message(void *arg)
     int sock_fd = 3;
     char send = 0;
     char msgtype = 0;
-    unsigned char buf[MAX_MSG_SIZE];
+    unsigned char buf[MAX_PACK_SIZE];
     unsigned char encode_msg[MAX_MSG_SIZE];
     unsigned char msg[MAX_MSG_SIZE];
     unsigned char hashstr1[16];
@@ -111,6 +112,7 @@ int main(int argc, char *argv[])
         char send;
         char hashstr_file[64];
         char hashstr_file_cmp[64];
+        char endstr[] = "end";
         printf("file mode\n");
         while (1)
         {
@@ -120,6 +122,7 @@ int main(int argc, char *argv[])
             printf("2. upload the file to server\n");
             scanf("%d", &choose);
             getchar();
+            fflush(stdin);
             if (choose == 1)
             {
                 bzero(filename, MAX_FILENAME_SIZE);
@@ -129,7 +132,7 @@ int main(int argc, char *argv[])
                 if (find)
                     *find = '\0';
                 printf("prepare to download the file %s\n", filename);
-                pack(filename, strlen(filename), NAME_A, NAME_C, 'f', buffer_filename);
+                pack(filename, strlen(filename), NAME_A, NAME_C, DATA_FILE_DOWNLOAD, buffer_filename);
                 netlink_send_message(sock_fd, buffer_filename, strlen(buffer_filename) + 1, PID_C, 0, 0);
                 FILE *fp = fopen(filename, "w");
                 if (NULL == fp)
@@ -146,9 +149,9 @@ int main(int argc, char *argv[])
                         bzero(buffer_pack, MAX_PACK_SIZE);
                         switch (msgtype)
                         {
-                        case DATA_FILE:
+                        case DATA_FILE_DOWNLOAD:
                             msg_decode(buffer_encode, strlen(buffer_encode), buffer_write);
-                            printf("[message]%s[len]%d\n", buffer_write, strlen(buffer_write));
+                            //printf("[message]%s[len]%d\n", buffer_write, strlen(buffer_write));
                             int num = fwrite(buffer_write, sizeof(char), strlen(buffer_write), fp);
                             printf("success to write %d bytes\n", num);
                             break;
@@ -192,13 +195,42 @@ int main(int argc, char *argv[])
             }
             if (choose == 2)
             {
+            start:
                 bzero(filename, MAX_FILENAME_SIZE);
                 printf("please enter the upload file\n");
                 fgets(filename, MAX_FILENAME_SIZE, stdin);
                 find = strchr(filename, '\n');
                 if (find)
                     *find = '\0';
+
+                FILE *fp = fopen(filename, "r");
+                if (NULL == fp)
+                {
+                    printf("File:%s Not Found\n", filename);
+                    printf("Please reEnter the filename!\n");
+                    goto start;
+                }
+                pack(filename, strlen(filename), NAME_A, NAME_C, DATA_FILE_UPLOAD, buffer_filename);
+                netlink_send_message(sock_fd, buffer_filename, strlen(buffer_filename) + 1, PID_C, 0, 0);
                 printf("prepare to upload the file %s\n", filename);
+                bzero(buffer_read, MAX_MSG_SIZE);
+                int length = 0;
+                // 每读取一段数据，便将其发送给客户端，循环直到文件读完为止
+                while ((length = fread(buffer_read, sizeof(char), MAX_MSG_SIZE, fp)) > 0)
+                {
+                    msg_encode(buffer_read, strlen(buffer_read), buffer_encode);
+                    pack(buffer_encode, strlen(buffer_encode), NAME_A, NAME_C, DATA_FILE_TXT, buffer_pack);
+                    netlink_send_message(sock_fd, buffer_pack, strlen(buffer_pack) + 1, PID_C, 0, 0);
+                    printf("upload len %d msg\n", length);
+                    bzero(buffer_read, MAX_MSG_SIZE);
+                    bzero(buffer_encode, MAX_MSG_SIZE);
+                    bzero(buffer_pack, MAX_PACK_SIZE);
+                }
+                // pack(endstr, strlen(endstr), NAME_A, NAME_C, DATA_FILE_TXT, buffer_pack);
+                // netlink_send_message(sock_fd, buffer_pack, strlen(buffer_pack) + 1, PID_C, 0, 0);
+                pack(endstr, strlen(endstr), NAME_A, NAME_C, DATA_FILE_END, buffer_pack);
+                netlink_send_message(sock_fd, buffer_pack, strlen(buffer_pack) + 1, PID_C, 0, 0);
+
                 bzero(filename, MAX_FILENAME_SIZE);
                 bzero(buffer_encode, MAX_ENCODE_SIZE);
                 bzero(buffer_filename, MAX_PACK_SIZE);
