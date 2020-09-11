@@ -11,6 +11,26 @@
 
 char hashstr[MAX_MSG_SIZE];
 char hashstr_file[64];
+FILE *fp1 = NULL;
+FILE *fp2 = NULL;
+char filename_upload_b[MAX_FILENAME_SIZE] = {0};
+char filename_upload_c[MAX_FILENAME_SIZE] = {0};
+void *thread_recv_message1(void *arg)
+{
+    int thrd_num = *((int *)arg);
+    int sock_fd = 3;
+    int len = 0;
+    char buffer_pack[MAX_PACK_SIZE];
+    while (1)
+    {
+        if (netlink_recv_message(sock_fd, buffer_pack, &len) == 0)
+        {
+
+            printf("[recvlen]%d\n", strlen(buffer_pack));
+        }
+        bzero(buffer_pack, MAX_PACK_SIZE);
+    }
+}
 void *thread_recv_message(void *arg)
 {
     int thrd_num = *((int *)arg);
@@ -26,14 +46,14 @@ void *thread_recv_message(void *arg)
     unsigned char replystr1[4] = "\0";
     unsigned char replystr2[3] = "\0";
     char filename_download[MAX_FILENAME_SIZE] = {0};
-    char filename_upload_b[MAX_FILENAME_SIZE] = {0};
-    char filename_upload_c[MAX_FILENAME_SIZE] = {0};
+
     char buffer_filename[MAX_PACK_SIZE] = {0};
     char buffer_write[MAX_MSG_SIZE];
     char buffer_read[MAX_MSG_SIZE];
     char buffer_encode[MAX_ENCODE_SIZE];
     char buffer_unpack[MAX_PACK_SIZE];
     char buffer_pack[MAX_PACK_SIZE];
+    char buffer_hash[64];
     //printf("recv_thread %d start receiving messages...\n", thrd_num);
     while (1)
     {
@@ -170,8 +190,8 @@ void *thread_recv_message(void *arg)
                     bzero(filename_upload_c, MAX_FILENAME_SIZE);
                     strncpy(filename_upload_c, encode_msg, strlen(encode_msg));
                     printf("recving the file:%s from C\n", filename_upload_c);
-                    FILE *fp = fopen(filename_upload_c, "w");
-                    if (NULL == fp)
+                    fp1 = fopen(filename_upload_c, "w");
+                    if (NULL == fp1)
                     {
                         printf("File:\t%s Can Not Open To Write\n", filename_upload_c);
                     }
@@ -192,8 +212,11 @@ void *thread_recv_message(void *arg)
                     strncpy(buffer_encode, encode_msg, strlen(encode_msg));
                     msg_decode(buffer_encode, strlen(buffer_encode), buffer_write);
                     //printf("[message]%s[len]%d\n", buffer_write, strlen(buffer_write));
-                    //int num = fwrite(buffer_write, sizeof(char), strlen(buffer_write), fp);
-                    printf("success to write  bytes\n");
+                    int num = fwrite(buffer_write, sizeof(char), strlen(buffer_write), fp1);
+                    printf("success to write %d bytes\n", strlen(buffer_write));
+                    bzero(buffer_write, MAX_MSG_SIZE);
+                    bzero(encode_msg, MAX_ENCODE_SIZE);
+                    bzero(buffer_encode, MAX_ENCODE_SIZE);
                     break;
                 default:
                     break;
@@ -206,7 +229,13 @@ void *thread_recv_message(void *arg)
 
                     break;
                 case NAME_C:
-                    printf("success recv from C\n");
+                    fclose(fp1);
+                    md5_checksum(filename_upload_c, buffer_hash);
+                    printf("success recv from C:[hash]%s[file]%s\n", buffer_hash, filename_upload_c);
+                    pack(buffer_hash, strlen(buffer_hash), NAME_C, NAME_A, DATA_FILE_END, buffer_pack);
+                    netlink_send_message(sock_fd, buffer_pack, strlen(buffer_pack) + 1, PID_A, 0, 0);
+                    bzero(buffer_hash, sizeof(buffer_hash));
+                    bzero(buffer_pack, MAX_PACK_SIZE);
                     break;
                 default:
                     break;

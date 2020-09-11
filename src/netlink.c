@@ -66,7 +66,7 @@ int netlink_send_message(int sock_fd, const unsigned char *message, int len, uns
     free(nlh);
     return 0;
 }
-
+extern int errno;
 int netlink_recv_message(int sock_fd, unsigned char *message, int *len)
 {
     struct nlmsghdr *nlh = NULL;
@@ -97,7 +97,9 @@ int netlink_recv_message(int sock_fd, unsigned char *message, int *len)
 
     if (recvmsg(sock_fd, &msg, 0) < 0)
     {
-        printf("recvmsg error!\n");
+        printf("[recvmsg error!]\n");
+        printf("[errno]%d\n", errno);
+        free(nlh);
         return -3;
     }
     *len = strlen(NLMSG_DATA(nlh));

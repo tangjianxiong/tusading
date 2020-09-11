@@ -210,14 +210,18 @@ int main(int argc, char *argv[])
                     printf("Please reEnter the filename!\n");
                     goto start;
                 }
+                bzero(hashstr_file, 64);
+                md5_checksum(filename, hashstr_file);
                 pack(filename, strlen(filename), NAME_A, NAME_C, DATA_FILE_UPLOAD, buffer_filename);
                 netlink_send_message(sock_fd, buffer_filename, strlen(buffer_filename) + 1, PID_C, 0, 0);
                 printf("prepare to upload the file %s\n", filename);
+                usleep(5000);
                 bzero(buffer_read, MAX_MSG_SIZE);
                 int length = 0;
                 // 每读取一段数据，便将其发送给客户端，循环直到文件读完为止
                 while ((length = fread(buffer_read, sizeof(char), MAX_MSG_SIZE, fp)) > 0)
                 {
+                    usleep(1000);
                     msg_encode(buffer_read, strlen(buffer_read), buffer_encode);
                     pack(buffer_encode, strlen(buffer_encode), NAME_A, NAME_C, DATA_FILE_TXT, buffer_pack);
                     netlink_send_message(sock_fd, buffer_pack, strlen(buffer_pack) + 1, PID_C, 0, 0);
@@ -228,9 +232,24 @@ int main(int argc, char *argv[])
                 }
                 // pack(endstr, strlen(endstr), NAME_A, NAME_C, DATA_FILE_TXT, buffer_pack);
                 // netlink_send_message(sock_fd, buffer_pack, strlen(buffer_pack) + 1, PID_C, 0, 0);
+                usleep(5000);
                 pack(endstr, strlen(endstr), NAME_A, NAME_C, DATA_FILE_END, buffer_pack);
                 netlink_send_message(sock_fd, buffer_pack, strlen(buffer_pack) + 1, PID_C, 0, 0);
-
+                printf("waiting for hashstr to vertify...\n");
+                bzero(buffer_pack, MAX_PACK_SIZE);
+                //设置超时
+                if (netlink_recv_message(sock_fd, buffer_pack, &len) == 0)
+                {
+                    bzero(hashstr_file_cmp, 64);
+                    unpack(buffer_pack, strlen(buffer_pack), &send, &msgtype, hashstr_file_cmp);
+                    printf("[hashstr]%s\n", hashstr_file_cmp);
+                }
+                if (strcmp(hashstr_file, hashstr_file_cmp) == 0)
+                {
+                    printf("file %s upload success\n", filename);
+                }
+                else
+                    printf("file %s upload failure\n", filename);
                 bzero(filename, MAX_FILENAME_SIZE);
                 bzero(buffer_encode, MAX_ENCODE_SIZE);
                 bzero(buffer_filename, MAX_PACK_SIZE);

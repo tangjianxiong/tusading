@@ -13,6 +13,7 @@
 #include <linux/kthread.h>
 #include <linux/err.h>
 #include <linux/sched.h>
+#include <linux/errno.h>
 #define NETLINK_TEST (25)
 #define PID_A (100)
 #define PID_B (101)
@@ -175,13 +176,13 @@ static void netlink_input(struct sk_buff *__skb)
     memcpy(str, NLMSG_DATA(nlh), sizeof(str));
     message_unpack(str, sizeof(str), &send, &recv, &msgtype, str1);
 
-    printk(KERN_INFO "[receive message (pid:%d)]:%s\n", nlh->nlmsg_pid, str1);
-    printk(KERN_INFO "[the sender]:%c\n", send);
-    printk(KERN_INFO "[receiver]:%c\n", recv);
-    printk(KERN_INFO "[type]:%c\n", msgtype);
-    printk(KERN_INFO "[space]:%d\n", NLMSG_SPACE(0));
-    printk(KERN_INFO "[size]:%d\n", nlh->nlmsg_len);
-    netlink_send(nlh->nlmsg_pid, kmsg_remsg, sizeof(kmsg_remsg));
+    // printk(KERN_INFO "[receive message (pid:%d)]:%s\n", nlh->nlmsg_pid, str1);
+    // printk(KERN_INFO "[the sender]:%c\n", send);
+    // printk(KERN_INFO "[receiver]:%c\n", recv);
+    // printk(KERN_INFO "[type]:%c\n", msgtype);
+    // printk(KERN_INFO "[space]:%d\n", NLMSG_SPACE(0));
+    // printk(KERN_INFO "[size]:%d\n", nlh->nlmsg_len);
+    //netlink_send(nlh->nlmsg_pid, kmsg_remsg, sizeof(kmsg_remsg));
     // switch (msgtype)
     // {
     // case DATA_CON:
