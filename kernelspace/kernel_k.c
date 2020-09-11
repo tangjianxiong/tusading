@@ -157,7 +157,7 @@ static void netlink_input(struct sk_buff *__skb)
     char recv; //the msg receiver
     char msgtype;
     char kmsg_illegalmsg[] = "kkillegal communication!";
-    char kmsg_remsg[] = "kkThe kernel has received the message!";
+    //char kmsg_remsg[] = "kkThe kernel has received the message!";
     //char kmsg_conerr[] = "kkConnection has not been established!";
 
     if (!__skb)

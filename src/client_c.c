@@ -62,9 +62,6 @@ void *thread_recv_message(void *arg)
         }
     }
 }
-void *thread_recv_file(void *arg)
-{
-}
 int main(int argc, char *argv[])
 {
     int sock_fd;

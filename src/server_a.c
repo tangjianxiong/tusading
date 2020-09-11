@@ -184,7 +184,14 @@ void *thread_recv_message(void *arg)
                 switch (send)
                 {
                 case NAME_B:
-
+                    bzero(filename_upload_b, MAX_FILENAME_SIZE);
+                    strncpy(filename_upload_b, encode_msg, strlen(encode_msg));
+                    printf("recving the file:%s from C\n", filename_upload_b);
+                    fp2 = fopen(filename_upload_b, "w");
+                    if (NULL == fp2)
+                    {
+                        printf("File:\t%s Can Not Open To Write\n", filename_upload_b);
+                    }
                     break;
                 case NAME_C:
                     bzero(filename_upload_c, MAX_FILENAME_SIZE);
@@ -205,7 +212,15 @@ void *thread_recv_message(void *arg)
                 switch (send)
                 {
                 case NAME_B:
-
+                    bzero(buffer_encode, MAX_ENCODE_SIZE);
+                    strncpy(buffer_encode, encode_msg, strlen(encode_msg));
+                    msg_decode(buffer_encode, strlen(buffer_encode), buffer_write);
+                    //printf("[message]%s[len]%d\n", buffer_write, strlen(buffer_write));
+                    int num1 = fwrite(buffer_write, sizeof(char), strlen(buffer_write), fp2);
+                    printf("success to write %d bytes\n", strlen(buffer_write));
+                    bzero(buffer_write, MAX_MSG_SIZE);
+                    bzero(encode_msg, MAX_ENCODE_SIZE);
+                    bzero(buffer_encode, MAX_ENCODE_SIZE);
                     break;
                 case NAME_C:
                     bzero(buffer_encode, MAX_ENCODE_SIZE);
@@ -226,7 +241,13 @@ void *thread_recv_message(void *arg)
                 switch (send)
                 {
                 case NAME_B:
-
+                    fclose(fp2);
+                    md5_checksum(filename_upload_c, buffer_hash);
+                    printf("success recv from C:[hash]%s[file]%s\n", buffer_hash, filename_upload_c);
+                    pack(buffer_hash, strlen(buffer_hash), NAME_B, NAME_A, DATA_FILE_END, buffer_pack);
+                    netlink_send_message(sock_fd, buffer_pack, strlen(buffer_pack) + 1, PID_A, 0, 0);
+                    bzero(buffer_hash, sizeof(buffer_hash));
+                    bzero(buffer_pack, MAX_PACK_SIZE);
                     break;
                 case NAME_C:
                     fclose(fp1);
