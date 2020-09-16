@@ -27,8 +27,9 @@ static void hello_cleanup(void)
 static void netlink_send(int pid, uint8_t *message, int len)
 {
     struct sk_buff *skb_1;
-    struct nlmsghdr *nlh;
 
+    struct nlmsghdr *nlh;
+    int ret = 0;
     if (!message || !nl_sk)
     {
         return;
@@ -46,7 +47,15 @@ static void netlink_send(int pid, uint8_t *message, int len)
     //fill message
     memcpy(NLMSG_DATA(nlh), message, len);
     //send messages via unicast
-    netlink_unicast(nl_sk, skb_1, pid, MSG_DONTWAIT);
+    ret = netlink_unicast(nl_sk, skb_1, pid, MSG_DONTWAIT);
+    if (ret < 0)
+    {
+        printk(KERN_ALERT "[send error]%d\n", ret);
+        pr_err("%p\n", skb_1);
+        netlink_unicast(nl_sk, skb_1, pid, MSG_DONTWAIT);
+    }
+
+    //netlink_unicast(nl_sk, skb_1, pid, MSG_DONTWAIT);
 }
 
 static void netlink_input(struct sk_buff *__skb)

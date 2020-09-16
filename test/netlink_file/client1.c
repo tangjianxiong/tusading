@@ -162,6 +162,7 @@ void *thread_recv_message(void *arg)
                 while ((length = fread(buffer, sizeof(char), MAX_BUFF_SIZE, fp)) > 0)
                 {
                     netlink_send_message(sock_fd, buffer, strlen(buffer) + 1, 0, 0);
+                    printf("[sendlen]%d\n", length);
                     bzero(buffer, MAX_BUFF_SIZE);
                 }
                 netlink_send_message(sock_fd, endstr, strlen(endstr) + 1, 0, 0);
@@ -170,9 +171,6 @@ void *thread_recv_message(void *arg)
 
                 //获取客户端接收到的文件的md5值，进行校验
                 //返回校验结果给客户端
-                netlink_recv_message(sock_fd, buffer, &len);
-                printf("%s  %s\n", buffer, file_name);
-                hash_verify(hashstr, buffer);
                 printf("File:%s Transfer Successful!\n", file_name);
                 bzero(hashstr, sizeof(hashstr));
                 bzero(buffer, sizeof(buffer));
@@ -186,6 +184,7 @@ int main()
     int len;
     unsigned char sendbuf[1024];
     unsigned char buf[2048];
+    char *find;
     pthread_t tid;
     //�����׽���
     sock_fd = netlink_create_socket();
@@ -207,8 +206,10 @@ int main()
     {
         printf("please enter the message:(enter the 'exit' to stop)\n");
         fgets(sendbuf, sizeof(sendbuf), stdin);
-        if (strcmp(sendbuf, "exit\n") == 0)
-            break;
+        find = strchr(sendbuf, '\n');
+        if (find)
+            *find = '\0';
+
         netlink_send_message(sock_fd, sendbuf, strlen(sendbuf) + 1, 0, 0);
     }
 

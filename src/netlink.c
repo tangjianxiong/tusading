@@ -110,11 +110,13 @@ int netlink_recv_message(int sock_fd, unsigned char *message, int *len)
 }
 int netlink_init(int id)
 {
+
     int sock_fd = netlink_create_socket();
     if (sock_fd == -1)
     {
         printf("create socket error!\n");
-        return -1;
+        printf("[errno]%d\n", errno);
+        exit(EXIT_FAILURE);
     }
     //bind the socket to the local address.
     if (netlink_bind(sock_fd, id) < 0)

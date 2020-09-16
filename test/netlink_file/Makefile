@@ -16,10 +16,10 @@ OPTION=-lpthread -lssl -lcrypto
 
 all: $(TARGET)
 $(NAME_A):$(OBJ_A)
-	$(CC) $(OBJ_A) -o out/$(NAME_A)  $(OPENSSL) $(OPTION)
+	$(CC) $(OBJ_A) -o out/server/$(NAME_A)  $(OPENSSL) $(OPTION)
 
 $(NAME_B):$(OBJ_B)
-	$(CC) $(OBJ_B) -o out/$(NAME_B)  $(OPENSSL) $(OPTION)
+	$(CC) $(OBJ_B) -o out/client/$(NAME_B)  $(OPENSSL) $(OPTION)
 
 
 %.o: %.c 
