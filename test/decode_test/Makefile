@@ -1,9 +1,9 @@
-SOURCE = encode_test.c ../../src/codec.c	
-OBJ = encode_test.o codec.o	#将.c文件转为.o文件
+SOURCE = decode_test.c ../../src/codec.c	
+OBJ = decode_test.o codec.o	#将.c文件转为.o文件
 INCLUDES = -I./hdr	#头文件路径
 
 
-TARGET = encode_test
+TARGET = decode_test
 CC = gcc
 
 $(TARGET): $(OBJ)	
@@ -12,8 +12,8 @@ $(TARGET): $(OBJ)
 
 codec.o: ../../src/codec.c
 	$(CC) $(INCLUDES) -c ../../src/codec.c
-encode_test.o: encode_test.c
-	$(CC) $(INCLUDES) -c encode_test.c
+decode_test.o: decode_test.c
+	$(CC) $(INCLUDES) -c decode_test.c
 
 .PHONY: clean
 clean:

@@ -9,10 +9,13 @@
 #include <string.h>
 #include <stdint.h>
 #include <string.h>
-//message为明文，len为明文长度，
-//output为明文的MD5值（固定128位）
+/* 将hash值以16进制打印出来 */
 void print_hexData(char *src, long len);
+
 int hash_calculate(unsigned char *message, long len, unsigned char *output);
 int hash_verify(unsigned char *hashstr1, unsigned char *hashstr2);
+
+/* 计算文件hash值 */
 int hash_file(const char *filename, char *output);
+
 int hash_str(const char *str, int len, char *output);

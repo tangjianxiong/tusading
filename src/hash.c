@@ -180,6 +180,12 @@ static int converte(WORD32 *x, const char *pt, int num, int old_status)
 
 int hash_calculate(unsigned char *message, long len, unsigned char *output)
 {
+	if (message == NULL)
+		return -2;
+	if (len > 1024)
+		return -3;
+	if (len < 0)
+		return -1;
 	WORD32 d[4];
 	char str[] = "\0";
 	int status = 0;
@@ -228,11 +234,74 @@ void print_hexData(char *src, long len)
 	int i = 0;
 	for (; i < len; i++)
 	{
-		if (i % 8 == 0)
-		{
-			printf("\r\n");
-		}
-		printf("0x%02X, ", (unsigned char)src[i]);
+		printf("%X", (unsigned char)src[i]);
 	}
 	printf("\n");
+}
+
+int hash_file(const char *filename, char *output)
+{
+	int ret = 0;
+	int file_len = 0, read_len = 0;
+	int loop = 0;
+	FILE *fp = NULL;
+	char *buf = NULL;
+	unsigned char digest[16];
+	struct stat stat_buf;
+	MD5_CTX context;
+
+	memset(&stat_buf, 0, sizeof(struct stat));
+	ret = stat(filename, &stat_buf);
+	if (ret < 0)
+	{
+		perror("stat");
+		ret = -1;
+		goto errexit;
+	}
+	file_len = stat_buf.st_size;
+
+	buf = malloc(file_len);
+	if (NULL == buf)
+	{
+		perror("malloc");
+		return -1;
+	}
+	memset(buf, 0, file_len);
+
+	fp = fopen(filename, "rb");
+	if (NULL == fp)
+	{
+		perror("fopen");
+		ret = -1;
+		goto errexit;
+	}
+	read_len = fread(buf, 1, file_len, fp);
+
+	MD5_Init(&context);
+	MD5_Update(&context, buf, read_len);
+	MD5_Final(digest, &context);
+
+	for (loop = 0; loop < sizeof(digest) / sizeof(char); loop++)
+	{
+		sprintf(&(output[loop * 2]), "%02x", (unsigned char)digest[loop]);
+		sprintf(&(output[loop * 2 + 1]), "%02x", (unsigned char)(digest[loop] << 4));
+	}
+
+	*(output + strlen(output) - 1) = '\0';
+errexit:
+	if (NULL != fp)
+	{
+		fclose(fp);
+		fp = NULL;
+	}
+	if (NULL != buf)
+	{
+		free(buf);
+		buf = NULL;
+	}
+	return ret;
+}
+
+int hash_str(const char *str, int len, char *output)
+{
 }
