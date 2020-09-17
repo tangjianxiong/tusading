@@ -1,3 +1,5 @@
+#include <stdio.h>
+#include <string.h>
 #ifndef BASE64_H
 #define BASE64_H
 
