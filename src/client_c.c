@@ -5,10 +5,7 @@
 #include "../hdr/connect.h"
 #include "../hdr/protocol.h"
 #include "../hdr/netlink.h"
-#include "../hdr/md5sum.h"
-char s_hashstr[50][MAX_MSG_SIZE];
-int s_hashstr_i = 0;
-int s_hashstr_vertify_i = 0;
+char s_hashstr[MAX_MSG_SIZE];
 void *thread_recv_message(void *arg)
 {
     int thrd_num = *((int *)arg);
@@ -21,12 +18,10 @@ void *thread_recv_message(void *arg)
     unsigned char msg[MAX_MSG_SIZE];
     unsigned char hashstr1[16];
     unsigned char hash_send[20];
-    //printf("recv_thread %d start receiving messages...\n", thrd_num);
     while (1)
     {
         if (netlink_recv_message(sock_fd, buf, &len) == 0)
         {
-            //printf("[thread]thread %d has recv the msg.\n", thrd_num);
             unpack(buf, len, &send, &msgtype, encode_msg);
             switch (msgtype)
             {
@@ -49,9 +44,8 @@ void *thread_recv_message(void *arg)
                 memset(hash_send, 0, sizeof(hash_send));
                 break;
             case DATA_HASH:
-                printf("the %d hash vertify\n", s_hashstr_vertify_i);
-                hash_verify(s_hashstr[s_hashstr_vertify_i], encode_msg);
-                s_hashstr_vertify_i++;
+                hash_verify(s_hashstr, encode_msg);
+                bzero(s_hashstr, MAX_MSG_SIZE);
                 break;
             case DATA_CON:
                 break;
@@ -173,8 +167,7 @@ int main(int argc, char *argv[])
             end:
                 fclose(fp);
                 int ret = 0;
-                ret = md5_checksum(filename, hashstr_file);
-                //printf("%s  %s\n", hashstr_file, filename);
+                ret = hash_file(filename, hashstr_file);
                 if (strcmp(hashstr_file, hashstr_file_cmp) == 0)
                 {
                     printf("file %s download success\n", filename);
@@ -208,14 +201,13 @@ int main(int argc, char *argv[])
                     goto start;
                 }
                 bzero(hashstr_file, 64);
-                md5_checksum(filename, hashstr_file);
+                hash_file(filename, hashstr_file);
                 pack(filename, strlen(filename), NAME_A, NAME_C, DATA_FILE_UPLOAD, buffer_filename);
                 netlink_send_message(sock_fd, buffer_filename, strlen(buffer_filename) + 1, PID_C, 0, 0);
                 printf("prepare to upload the file %s\n", filename);
                 usleep(5000);
                 bzero(buffer_read, MAX_MSG_SIZE);
                 int length = 0;
-                // 每读取一段数据，便将其发送给客户端，循环直到文件读完为止
                 while ((length = fread(buffer_read, sizeof(char), MAX_MSG_SIZE, fp)) > 0)
                 {
                     usleep(1000);
@@ -234,7 +226,6 @@ int main(int argc, char *argv[])
                 netlink_send_message(sock_fd, buffer_pack, strlen(buffer_pack) + 1, PID_C, 0, 0);
                 printf("waiting for hashstr to vertify...\n");
                 bzero(buffer_pack, MAX_PACK_SIZE);
-                //设置超时
                 if (netlink_recv_message(sock_fd, buffer_pack, &len) == 0)
                 {
                     bzero(hashstr_file_cmp, 64);
@@ -274,7 +265,6 @@ int main(int argc, char *argv[])
             memset(sendbuf_con, 0, sizeof(sendbuf_con));
             printf("waitting the server...\n");
             netlink_recv_message(sock_fd, buf, &len);
-            netlink_recv_message(sock_fd, buf, &len);
             unpack(buf, strlen(buf), &send1, &msgtype1, replymsg);
             if (replymsg[0] == 'y')
             {
@@ -305,10 +295,9 @@ int main(int argc, char *argv[])
             if (find)
                 *find = '\0';
 
-            hash_calculate(sendbuf, strlen(sendbuf), s_hashstr[s_hashstr_i]);
+            hash_calculate(sendbuf, strlen(sendbuf), s_hashstr);
             printf("[HASH]The original hash value:");
-            print_hexData(s_hashstr[s_hashstr_i], 16);
-            s_hashstr_i++;
+            print_hexData(s_hashstr, 16);
             msg_encode(sendbuf, strlen(sendbuf), sendbuf_encode);
             memset(sendbuf, 0, sizeof(sendbuf));
             printf("[CODEC]the encoded message is:%s\n", sendbuf_encode);
@@ -319,9 +308,6 @@ int main(int argc, char *argv[])
 
             pack(sendbuf_encode, strlen(sendbuf_encode), recv, NAME_C, DATA_MSG, sendbuf_pack);
             printf("[PACK]the packed message is:%s\n", sendbuf_pack);
-            // if (strcmp(sendbuf, "exit\n") == 0)
-            //     break;
-            //send message
             netlink_send_message(sock_fd, sendbuf_pack, strlen(sendbuf_pack) + 1, PID_C, 0, 0);
             memset(sendbuf_pack, 0, sizeof(sendbuf_pack));
             memset(sendbuf_encode, 0, sizeof(sendbuf_encode));

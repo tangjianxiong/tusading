@@ -1,9 +1,9 @@
-SOURCE = pack_test.c ../../src/encapsulation.c	
+SOURCE = unpack_test.c ../../src/encapsulation.c	
 OBJ=$(patsubst %.c, %.o, $(SOURCE))	#将.c文件转为.o文件
 INCLUDES = -I./hdr	#头文件路径
 
 
-TARGET = pack_test
+TARGET = unpack_test
 CC = gcc
 
 $(TARGET): $(OBJ)	

@@ -1,4 +1,4 @@
-obj-m:=kernel_k.o
+obj-m:=kernel_test.o
 KDIR:=~/work/T507/kunos/kernel/linux-4.9/
 #/home/xufang/workspace/T5anQ/kunos/out/gcc-linaro-7.4.1-2019.02-x86_64_aarch64-linux-gnu/bin/aarch64-linux-gnu-
 

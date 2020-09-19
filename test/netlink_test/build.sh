@@ -1,8 +1,8 @@
 #!/bin/bash
+mkdir out/
 cd kernelk/
 make
-mv kernel_k.ko ../out/
+mv *.ko ../out/
 make clean
 cd ..
 make
-make clean

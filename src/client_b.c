@@ -4,10 +4,8 @@
 #include "../hdr/connect.h"
 #include "../hdr/protocol.h"
 #include "../hdr/netlink.h"
-#include "../hdr/md5sum.h"
-char s_hashstr[50][MAX_MSG_SIZE];
-int s_hashstr_i = 0;
-int s_hashstr_vertify_i = 0;
+char s_hashstr[MAX_MSG_SIZE];
+
 void *thread_recv_message(void *arg)
 {
     int thrd_num = *((int *)arg);
@@ -45,9 +43,8 @@ void *thread_recv_message(void *arg)
 
                 break;
             case DATA_HASH:
-                printf("the %d hash vertify\n", s_hashstr_vertify_i);
-                hash_verify(s_hashstr[s_hashstr_vertify_i], encode_msg);
-                s_hashstr_vertify_i++;
+                hash_verify(s_hashstr, encode_msg);
+                bzero(s_hashstr, MAX_MSG_SIZE);
                 break;
             case DATA_CON:
                 break;
@@ -175,7 +172,7 @@ int main(int argc, char *argv[])
             end:
                 fclose(fp);
                 int ret = 0;
-                ret = md5_checksum(filename, hashstr_file);
+                ret = hash_file(filename, hashstr_file);
                 //printf("%s  %s\n", hashstr_file, filename);
                 if (strcmp(hashstr_file, hashstr_file_cmp) == 0)
                 {
@@ -210,7 +207,7 @@ int main(int argc, char *argv[])
                     goto start;
                 }
                 bzero(hashstr_file, 64);
-                md5_checksum(filename, hashstr_file);
+                hash_file(filename, hashstr_file);
                 pack(filename, strlen(filename), NAME_A, NAME_B, DATA_FILE_UPLOAD, buffer_filename);
                 netlink_send_message(sock_fd, buffer_filename, strlen(buffer_filename) + 1, PID_C, 0, 0);
                 printf("prepare to upload the file %s\n", filename);
@@ -276,7 +273,6 @@ int main(int argc, char *argv[])
             memset(sendbuf_con, 0, sizeof(sendbuf_con));
             printf("waitting the server...\n");
             netlink_recv_message(sock_fd, buf, &len);
-            netlink_recv_message(sock_fd, buf, &len);
             unpack(buf, strlen(buf), &send1, &msgtype1, replymsg);
             if (replymsg[0] == 'y')
             {
@@ -286,7 +282,6 @@ int main(int argc, char *argv[])
             memset(buf, 0, sizeof(buf));
             memset(replymsg, 0, sizeof(replymsg));
         }
-        //pthread_create(&tid, NULL, thread_recv_message, NULL);
         for (no = 0; no < THREAD_NUMBER; no++)
         {
             res = pthread_create(&tid[no], NULL, thread_recv_message, &no);
@@ -307,10 +302,9 @@ int main(int argc, char *argv[])
             if (find)
                 *find = '\0';
 
-            hash_calculate(sendbuf, strlen(sendbuf), s_hashstr[s_hashstr_i]);
+            hash_calculate(sendbuf, strlen(sendbuf), s_hashstr);
             printf("[HASH]The original hash value:");
-            print_hexData(s_hashstr[s_hashstr_i], 16);
-            s_hashstr_i++;
+            print_hexData(s_hashstr, 16);
             msg_encode(sendbuf, strlen(sendbuf), sendbuf_encode);
             memset(sendbuf, 0, sizeof(sendbuf));
             printf("[CODEC]the encoded message is:%s\n", sendbuf_encode);

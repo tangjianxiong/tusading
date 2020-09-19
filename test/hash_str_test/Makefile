@@ -1,4 +1,4 @@
-SOURCE = hash_str_testt.c ../../src/hash.c	
+SOURCE = hash_str_test.c ../../src/hash.c	
 OBJ = hash_str_test.o hash.o	#将.c文件转为.o文件
 INCLUDES = -I./hdr	#头文件路径
 

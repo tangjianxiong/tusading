@@ -16,7 +16,8 @@ static dev_t devId;
 static struct class *cls = NULL;
 struct sock *nl_sk = NULL;
 
-static void hello_cleanup(void)
+static void
+hello_cleanup(void)
 {
     netlink_kernel_release(nl_sk);
     device_destroy(cls, devId);
@@ -24,44 +25,35 @@ static void hello_cleanup(void)
     unregister_chrdev_region(devId, 1);
 }
 
-static void netlink_send(int pid, uint8_t *message, int len)
+static void
+netlink_send(int pid, uint8_t *message, int len)
 {
     struct sk_buff *skb_1;
-
     struct nlmsghdr *nlh;
-    int ret = 0;
+
     if (!message || !nl_sk)
     {
         return;
     }
-    //allocate memory for skb_1
+
     skb_1 = alloc_skb(NLMSG_SPACE(len), GFP_KERNEL);
     if (!skb_1)
     {
         printk(KERN_ERR "alloc_skb error!\n");
     }
-    //set the message header
+
     nlh = nlmsg_put(skb_1, 0, 0, 0, len, 0);
     NETLINK_CB(skb_1).portid = 0;
     NETLINK_CB(skb_1).dst_group = 0;
-    //fill message
     memcpy(NLMSG_DATA(nlh), message, len);
-    //send messages via unicast
-    ret = netlink_unicast(nl_sk, skb_1, pid, MSG_DONTWAIT);
-    if (ret < 0)
-    {
-        printk(KERN_ALERT "[send error]%d\n", ret);
-        pr_err("%p\n", skb_1);
-        netlink_unicast(nl_sk, skb_1, pid, MSG_DONTWAIT);
-    }
-
-    //netlink_unicast(nl_sk, skb_1, pid, MSG_DONTWAIT);
+    netlink_unicast(nl_sk, skb_1, pid, MSG_DONTWAIT);
 }
 
-static void netlink_input(struct sk_buff *__skb)
+static void
+netlink_input(struct sk_buff *__skb)
 {
     struct sk_buff *skb;
-    char str[1024];
+    char str[100];
     struct nlmsghdr *nlh;
 
     if (!__skb)
@@ -81,62 +73,34 @@ static void netlink_input(struct sk_buff *__skb)
     printk(KERN_INFO "receive message (pid:%d):%s\n", nlh->nlmsg_pid, str);
     printk(KERN_INFO "space:%d\n", NLMSG_SPACE(0));
     printk(KERN_INFO "size:%d\n", nlh->nlmsg_len);
-    if (nlh->nlmsg_pid == 100)
-    {
-        netlink_send(101, NLMSG_DATA(nlh), nlh->nlmsg_len - NLMSG_SPACE(0));
-    }
-    else
-    {
-        netlink_send(100, NLMSG_DATA(nlh), nlh->nlmsg_len - NLMSG_SPACE(0));
-    }
+    netlink_send(nlh->nlmsg_pid, NLMSG_DATA(nlh), nlh->nlmsg_len - NLMSG_SPACE(0));
 
     return;
 }
 
 static __init int netlink_init(void)
 {
-    int result;
-    struct netlink_kernel_cfg nkc;
+    struct netlink_kernel_cfg nkc =
+        {
+            .groups = 0,
+            .flags = 0,
+            .input = netlink_input,
+            .cb_mutex = NULL,
+            .bind = NULL,
+            .unbind = NULL,
+            .compare = NULL};
 
     printk(KERN_WARNING "netlink init start!\n");
 
-    //��̬ע���豸��
-    if ((result = alloc_chrdev_region(&devId, 0, 1, "stone-alloc-dev")) != 0)
-    {
-        printk(KERN_WARNING "register dev id error:%d\n", result);
-        goto err;
-    }
-    else
-    {
-        printk(KERN_WARNING "register dev id success!\n");
-    }
-    //��̬�����豸�ڵ�
-    cls = class_create(THIS_MODULE, "stone-class");
-    if (IS_ERR(cls))
-    {
-        printk(KERN_WARNING "create class error!\n");
-        goto err;
-    }
-    if (device_create(cls, NULL, devId, "", "hello%d", 0) == NULL)
-    {
-        printk(KERN_WARNING "create device error!\n");
-        goto err;
-    }
+    //初始化netlink
 
-    //���ýṹ
-    nkc.groups = 0; //����
-    nkc.flags = 0;
-    nkc.input = netlink_input; //�󶨽��պ���
-    nkc.cb_mutex = NULL;
-    nkc.bind = NULL;
-    nkc.unbind = NULL;
-    nkc.compare = NULL;
     nl_sk = netlink_kernel_create(&init_net, NETLINK_TEST, &nkc);
     if (!nl_sk)
     {
         printk(KERN_ERR "[netlink] create netlink socket error!\n");
         goto err;
     }
+
     printk(KERN_ALERT "netlink init success!\n");
     return 0;
 err:
@@ -154,4 +118,4 @@ module_init(netlink_init);
 module_exit(netlink_exit);
 
 MODULE_LICENSE("GPL");
-MODULE_AUTHOR("Stone");
+MODULE_AUTHOR("tjx");

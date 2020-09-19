@@ -5,20 +5,21 @@
 int main(int argc, char *argv[])
 {
 
-    char out_str[MAX_PACK_SIZE];
-    char recv = argv[2][0];
-    char send = argv[3][0];
-    char msgtype = argv[4][0];
+    char out_str[MAX_ENCODE_SIZE];
+    char send;
+    char msgtype;
     int num;
     int len = strlen(argv[1]);
-    num = pack(argv[1], len, recv, send, msgtype, out_str);
+    num = unpack(argv[1], len, &send, &msgtype, out_str);
     if (num < 0)
     {
         printf("[errno]%d\n", num);
     }
     else
     {
-        printf("[pack]%s\n", out_str);
+        printf("[unpack]%s\n", out_str);
+        printf("[send]%c\n", send);
+        printf("[type]%c\n", msgtype);
     }
     return 0;
 }

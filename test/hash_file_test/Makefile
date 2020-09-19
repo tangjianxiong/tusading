@@ -2,7 +2,7 @@ SOURCE = hash_file_test.c ../../src/hash.c
 OBJ=$(patsubst %.c, %.o, $(SOURCE))	#将.c文件转为.o文件
 
 INCLUDES = -I./hdr	#头文件路径
-OPTION=-lcrypto #编译选项
+OPTION=-lcrypto#编译选项
 
 TARGET = hash_file_test
 CC = gcc
