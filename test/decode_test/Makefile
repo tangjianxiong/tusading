@@ -8,10 +8,10 @@ CC = gcc
 
 $(TARGET): $(OBJ)	
 	@mkdir -p output/	#创建一个目录，用于存放已编译的目标
-	$(CC) $(OBJ)  -o output/$(TARGET)
+	$(CC) -fprofile-arcs -ftest-coverage $(OBJ)  -o output/$(TARGET) 
 
 codec.o: ../../src/codec.c
-	$(CC) $(INCLUDES) -c ../../src/codec.c
+	$(CC) $(INCLUDES) -c ../../src/codec.c 
 decode_test.o: decode_test.c
 	$(CC) $(INCLUDES) -c decode_test.c
 
