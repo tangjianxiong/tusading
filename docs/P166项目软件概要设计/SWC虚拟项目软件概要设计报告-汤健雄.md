@@ -4,13 +4,13 @@ subtitle: 概要设计文档
 author: 汤健雄
 changelog:
 - ver: 0.1
-  date: 2020.9.15
+  date: 2020.8.15
   author: 汤健雄 
   desc: |
 		建立文档
 
 - ver: 0.5
-  date: 2020.9.15
+  date: 2020.8.15
   author: 汤健雄
   desc: |
     1.增加外部接口
