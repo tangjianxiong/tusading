@@ -8,7 +8,6 @@ char s_hashstr[MAX_MSG_SIZE];
 
 void *thread_recv_message(void *arg)
 {
-    //int thrd_num = *((int *)arg);
     int len;
     int sock_fd = 3;
     char send = 0;
@@ -18,12 +17,10 @@ void *thread_recv_message(void *arg)
     unsigned char msg[MAX_MSG_SIZE];
     unsigned char hashstr1[16];
     unsigned char hash_send[20];
-    //printf("recv_thread %d start receiving messages...\n", thrd_num);
     while (1)
     {
         if (netlink_recv_message(sock_fd, buf, &len) == 0)
         {
-            //printf("[thread]thread %d has recv the msg.\n", thrd_num);
             unpack(buf, len, &send, &msgtype, encode_msg);
             switch (msgtype)
             {
@@ -67,10 +64,10 @@ int main(int argc, char *argv[])
     int sock_fd;
     int len;
     char *find;
-    unsigned char sendbuf[MAX_MSG_SIZE]; //缓存输入数据
+    unsigned char sendbuf[MAX_MSG_SIZE];
     unsigned char sendbuf_encode[MAX_MSG_SIZE];
     unsigned char sendbuf_pack[MAX_MSG_SIZE];
-    unsigned char buf[MAX_MSG_SIZE]; //接收消息
+    unsigned char buf[MAX_MSG_SIZE];
     unsigned char buf_hash[MAX_MSG_SIZE];
     pthread_t tid[THREAD_NUMBER];
     int no, res;
@@ -167,7 +164,6 @@ int main(int argc, char *argv[])
                         bzero(buffer_unpack, MAX_PACK_SIZE);
                     }
                 }
-            //
             end:
                 fclose(fp);
                 int ret = 0;
@@ -213,7 +209,7 @@ int main(int argc, char *argv[])
                 usleep(5000);
                 bzero(buffer_read, MAX_MSG_SIZE);
                 int length = 0;
-                // 每读取一段数据，便将其发送给客户端，循环直到文件读完为止
+                /* file data is read and sent in a loop */
                 while ((length = fread(buffer_read, sizeof(char), MAX_MSG_SIZE, fp)) > 0)
                 {
                     usleep(1000);
@@ -232,7 +228,6 @@ int main(int argc, char *argv[])
                 netlink_send_message(sock_fd, buffer_pack, strlen(buffer_pack) + 1, PID_C, 0, 0);
                 printf("waiting for hashstr to vertify...\n");
                 bzero(buffer_pack, MAX_PACK_SIZE);
-                //设置超时
                 if (netlink_recv_message(sock_fd, buffer_pack, &len) == 0)
                 {
                     bzero(hashstr_file_cmp, 64);
@@ -314,9 +309,6 @@ int main(int argc, char *argv[])
 
             pack(sendbuf_encode, strlen(sendbuf_encode), recv, NAME_B, DATA_MSG, sendbuf_pack);
             printf("[PACK]the packed message is:%s[end]", sendbuf_pack);
-            // if (strcmp(sendbuf, "exit\n") == 0)
-            //     break;
-            //send message
             netlink_send_message(sock_fd, sendbuf_pack, strlen(sendbuf_pack) + 1, PID_B, 0, 0);
             memset(sendbuf_pack, 0, sizeof(sendbuf_pack));
             memset(sendbuf_encode, 0, sizeof(sendbuf_encode));

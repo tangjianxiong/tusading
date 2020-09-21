@@ -17,4 +17,4 @@ int msg_encode(const unsigned char *in, unsigned int inlen, char *out);
  */
 int msg_decode(const char *in, unsigned int inlen, unsigned char *out);
 
-#endif /* BASE64_H */
+#endif

@@ -28,7 +28,7 @@
 #define NAME_A 'a'
 #define NAME_B 'b'
 #define NAME_C 'c'
-//thread
+
 static int get_state_i = 1;
 static struct task_struct *test_task;
 
@@ -40,25 +40,8 @@ static u32 illegal_num;
 static u32 connect_sign_b = 0;
 static u32 connect_sign_c = 0;
 static struct dentry *root_d;
-/*通过内核线程检测应用程序是否在线*/
 
-// static int getconsign(char a)
-// {
-//     int res;
-//     switch (a)
-//     {
-//     case NAME_B:
-//         res = connect_sign_b;
-//         break;
-//     case NAME_C:
-//         res = connect_sign_c;
-//         break;
-//     default:
-//         res = -1;
-//         break;
-//     }
-//     return res;
-// }
+/* Acquire application Port ID */
 static int getpid(char a)
 {
     int res;
@@ -82,6 +65,8 @@ static int getpid(char a)
     }
     return res;
 }
+
+/* Determine the client and server */
 int judge(char a)
 {
     int res;
@@ -101,6 +86,8 @@ int judge(char a)
     }
     return res;
 }
+
+/* Parse message header */
 static void message_unpack(const unsigned char *in, unsigned int inlen, char *sendid, char *recvid, char *msgtype, char *out)
 {
     *sendid = in[1];
@@ -108,6 +95,8 @@ static void message_unpack(const unsigned char *in, unsigned int inlen, char *se
     *msgtype = in[2];
     memcpy(out, in + 1, inlen - 1);
 }
+
+/* Module exit cleanup function */
 static void hello_cleanup(void)
 {
     netlink_kernel_release(nl_sk);
@@ -119,7 +108,7 @@ static void hello_cleanup(void)
     test_task = NULL;
     debugfs_remove_recursive(root_d);
 }
-
+/* kernel netlink send */
 static void netlink_send(int pid, uint8_t *message, int len)
 {
     struct sk_buff *skb_1;
@@ -148,13 +137,14 @@ static void netlink_send(int pid, uint8_t *message, int len)
 }
 char str[MAX_PACK_SIZE];
 char str1[MAX_PACK_SIZE];
+
+/* kernel netlink recv */
 static void netlink_input(struct sk_buff *__skb)
 {
     struct sk_buff *skb;
-
     struct nlmsghdr *nlh;
-    char send; //the msg sender
-    char recv; //the msg receiver
+    char send;
+    char recv;
     char msgtype;
     char kmsg_illegalmsg[] = "kkillegal communication!";
     //char kmsg_remsg[] = "kkThe kernel has received the message!";
@@ -176,47 +166,8 @@ static void netlink_input(struct sk_buff *__skb)
     memcpy(str, NLMSG_DATA(nlh), sizeof(str));
     message_unpack(str, sizeof(str), &send, &recv, &msgtype, str1);
 
-    // printk(KERN_INFO "[receive message (pid:%d)]:%s\n", nlh->nlmsg_pid, str1);
-    // printk(KERN_INFO "[the sender]:%c\n", send);
-    // printk(KERN_INFO "[receiver]:%c\n", recv);
-    // printk(KERN_INFO "[type]:%c\n", msgtype);
-    // printk(KERN_INFO "[space]:%d\n", NLMSG_SPACE(0));
-    // printk(KERN_INFO "[size]:%d\n", nlh->nlmsg_len);
-    //netlink_send(nlh->nlmsg_pid, kmsg_remsg, sizeof(kmsg_remsg));
-    // switch (msgtype)
-    // {
-    // case DATA_CON:
-    //     if (send == NAME_A)
-    //     {
-    //         if ((str1[0] == 'y') && (recv == NAME_B))
-    //             connect_sign_b = 1;
-    //         if ((str1[0] == 'y') && (recv == NAME_C))
-    //             connect_sign_c = 1;
-    //     }
-    //     netlink_send(getpid(recv), str1, sizeof(str1));
-
-    //     break;
-    // default:
     if ((judge(recv) == 1 && judge(send) == 2) || (judge(recv) == 2 && judge(send) == 1))
     {
-        // if (recv == NAME_A)
-        // {
-        //     if (getconsign(send) == 1)
-        //         netlink_send(getpid(recv), str1, sizeof(str1));
-        //     else
-        //     {
-        //         netlink_send(nlh->nlmsg_pid, kmsg_conerr, sizeof(kmsg_conerr));
-        //     }
-        // }
-        // else
-        // {
-        //     if (getconsign(recv) == 1)
-        //         netlink_send(getpid(recv), str1, sizeof(str1));
-        //     else
-        //     {
-        //         netlink_send(nlh->nlmsg_pid, kmsg_conerr, sizeof(kmsg_conerr));
-        //     }
-        // }
         netlink_send(getpid(recv), str1, sizeof(str1));
         printk(KERN_INFO "[sendlen]%ld[end]\n", strlen(str1));
     }
@@ -225,14 +176,13 @@ static void netlink_input(struct sk_buff *__skb)
         printk(KERN_INFO "illegal communication!");
         netlink_send(nlh->nlmsg_pid, kmsg_illegalmsg, sizeof(kmsg_illegalmsg));
     }
-    //     break;
-    // }
     memset(str, 0, sizeof(str));
     memset(str1, 0, sizeof(str1));
     send = 0;
     msgtype = 0;
     recv = 0;
 }
+/* Get process state */
 static int thread_get_pstate(void *data)
 {
     int state_a = 0;
@@ -282,7 +232,8 @@ static __init int netlink_init(void)
     debugfs_create_u32("connect_sign_c", 0664, root_d, &connect_sign_c);
 
     printk(KERN_WARNING "netlink init start!\n");
-    /*注册设备节点*/
+
+    /*Registered device node*/
     if ((result = alloc_chrdev_region(&devId, 0, 1, "tjx-alloc-dev")) != 0)
     {
         printk(KERN_WARNING "register dev id error:%d\n", result);
@@ -304,6 +255,7 @@ static __init int netlink_init(void)
         goto err;
     }
 
+    /* Initializes the NetLink configuration */
     nkc.groups = 0;
     nkc.flags = 0;
     nkc.input = netlink_input;
@@ -317,8 +269,8 @@ static __init int netlink_init(void)
         printk(KERN_ERR "[netlink]create netlink socket error!\n");
         goto err;
     }
-
     printk(KERN_ALERT "[netlink]netlink init success!\n");
+
     /*create thread to monitor A，B and C*/
     test_task = kthread_create(thread_get_pstate, NULL, "test_task");
 
