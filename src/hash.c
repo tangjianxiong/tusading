@@ -187,7 +187,6 @@ int hash_calculate(unsigned char *message, long len, unsigned char *output)
 	if (len < 0)
 		return -1;
 	WORD32 d[4];
-	char str[] = "\0";
 	int status = 0;
 	long i = 0;
 	inic_digest(d);
@@ -302,6 +301,6 @@ errexit:
 	return ret;
 }
 
-int hash_str(const char *str, int len, char *output)
-{
-}
+// int hash_str(const char *str, int len, char *output)
+// {
+// }

@@ -8,7 +8,7 @@
 char s_hashstr[MAX_MSG_SIZE];
 void *thread_recv_message(void *arg)
 {
-    int thrd_num = *((int *)arg);
+    //int thrd_num = *((int *)arg);
     int len;
     int sock_fd = 3;
     char send = 0;
@@ -111,9 +111,8 @@ int main(int argc, char *argv[])
             printf("please choose the way:(1 or 2)\n");
             printf("1. download the file from server\n");
             printf("2. upload the file to server\n");
-            scanf("%d", &choose);
+            scanf("%1d", &choose);
             getchar();
-            fflush(stdin);
             if (choose == 1)
             {
                 bzero(filename, MAX_FILENAME_SIZE);

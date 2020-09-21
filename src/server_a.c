@@ -11,25 +11,10 @@ FILE *fp1 = NULL;
 FILE *fp2 = NULL;
 char filename_upload_b[MAX_FILENAME_SIZE] = {0};
 char filename_upload_c[MAX_FILENAME_SIZE] = {0};
-void *thread_recv_message1(void *arg)
-{
-    int thrd_num = *((int *)arg);
-    int sock_fd = 3;
-    int len = 0;
-    char buffer_pack[MAX_PACK_SIZE];
-    while (1)
-    {
-        if (netlink_recv_message(sock_fd, buffer_pack, &len) == 0)
-        {
 
-            printf("[recvlen]%d\n", strlen(buffer_pack));
-        }
-        bzero(buffer_pack, MAX_PACK_SIZE);
-    }
-}
 void *thread_recv_message(void *arg)
 {
-    int thrd_num = *((int *)arg);
+    // int thrd_num = *((int *)arg);
     int len;
     int sock_fd = 3;
     char send = 0;
@@ -107,8 +92,7 @@ void *thread_recv_message(void *arg)
                 // printf("file mode\n");
                 printf("sending the file:%s\n", filename_download);
                 bzero(hashstr_file, sizeof(hashstr_file));
-                int ret = 0;
-                ret = hash_file(filename_download, hashstr_file);
+                hash_file(filename_download, hashstr_file);
                 printf("%s  %s\n", hashstr_file, filename_download);
                 //open file and send to client
                 FILE *fp = fopen(filename_download, "r");
@@ -192,7 +176,7 @@ void *thread_recv_message(void *arg)
                     msg_decode(buffer_encode, strlen(buffer_encode), buffer_write);
                     //printf("[message]%s[len]%d\n", buffer_write, strlen(buffer_write));
                     int num1 = fwrite(buffer_write, sizeof(char), strlen(buffer_write), fp2);
-                    printf("success to write %d bytes\n", strlen(buffer_write));
+                    printf("success to write %d bytes\n", num1);
                     bzero(buffer_write, MAX_MSG_SIZE);
                     bzero(encode_msg, MAX_ENCODE_SIZE);
                     bzero(buffer_encode, MAX_ENCODE_SIZE);
@@ -203,7 +187,7 @@ void *thread_recv_message(void *arg)
                     msg_decode(buffer_encode, strlen(buffer_encode), buffer_write);
                     //printf("[message]%s[len]%d\n", buffer_write, strlen(buffer_write));
                     int num = fwrite(buffer_write, sizeof(char), strlen(buffer_write), fp1);
-                    printf("success to write %d bytes\n", strlen(buffer_write));
+                    printf("success to write %d bytes\n", num);
                     bzero(buffer_write, MAX_MSG_SIZE);
                     bzero(encode_msg, MAX_ENCODE_SIZE);
                     bzero(buffer_encode, MAX_ENCODE_SIZE);
@@ -249,23 +233,23 @@ void *thread_recv_message(void *arg)
 int main()
 {
     int sock_fd;
-    int len;
-    char *find;
+    // int len;
+
     unsigned char sendbuf[MAX_MSG_SIZE]; //缓存输入数据
     unsigned char sendbuf_encode[MAX_MSG_SIZE];
     unsigned char sendbuf_pack[MAX_MSG_SIZE];
-    unsigned char buf[MAX_MSG_SIZE]; //接收消息
-    unsigned char buf_hash[MAX_MSG_SIZE];
+    // unsigned char buf[MAX_MSG_SIZE]; //接收消息
+    // unsigned char buf_hash[MAX_MSG_SIZE];
     pthread_t tid[THREAD_NUMBER];
-    int no, res;
+    int no;
     char recv;
-    char msgtype;
+    // char msgtype;
 
     //creat socket
     sock_fd = netlink_init(PID_A);
     for (no = 0; no < THREAD_NUMBER; no++)
     {
-        res = pthread_create(&tid[no], NULL, thread_recv_message, &no);
+        int res = pthread_create(&tid[no], NULL, thread_recv_message, &no);
         if (res != 0)
         {
             printf("create msg_recv_thread %d failed\n", no);
@@ -275,6 +259,7 @@ int main()
 
     while (1)
     {
+        char *find;
         printf("\nplease enter the message:(enter the 'exit' to stop)\n");
         printf("[input msg]:");
         fgets(sendbuf, sizeof(sendbuf), stdin);

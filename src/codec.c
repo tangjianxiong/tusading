@@ -126,18 +126,17 @@ int msg_encode(const unsigned char *in, unsigned int inlen, char *out)
 	int s;
 	unsigned int i;
 	unsigned int j;
-	unsigned char c;
+
 	unsigned char l;
 	if (in == NULL)
 		return -1;
-	if (inlen < 0)
-		return -2;
 	if ((inlen > 1024) || (strlen(in) > 1024))
 		return -3;
 	s = 0;
 	l = 0;
 	for (i = j = 0; i < inlen; i++)
 	{
+		unsigned char c;
 		c = in[i];
 
 		switch (s)
@@ -181,11 +180,9 @@ int msg_decode(const char *in, unsigned int inlen, unsigned char *out)
 {
 	unsigned int i;
 	unsigned int j;
-	unsigned char c;
+
 	if (in == NULL)
 		return -1;
-	if (inlen < 0)
-		return -2;
 	if ((inlen > 1400) || (strlen(in) > 1400))
 		return -3;
 
@@ -196,6 +193,7 @@ int msg_decode(const char *in, unsigned int inlen, unsigned char *out)
 
 	for (i = j = 0; i < inlen; i++)
 	{
+		unsigned char c;
 		if (in[i] == BASE64_PAD)
 		{
 			break;
