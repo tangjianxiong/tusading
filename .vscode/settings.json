@@ -1,3 +1,20 @@
 {
-    "git.ignoreLimitWarning": true
+    "git.ignoreLimitWarning": true,
+    "restructuredtext.confPath": "y:\\work\\longan\\kernel\\linux-5.4\\Documentation",
+    "C_Cpp.vcFormat.newLine.beforeOpenBrace.function": "newLine",
+    "C_Cpp.vcFormat.newLine.beforeOpenBrace.lambda": "sameLine",
+    "C_Cpp.vcFormat.newLine.beforeOpenBrace.namespace": "sameLine",
+    "C_Cpp.vcFormat.newLine.beforeOpenBrace.type": "sameLine",
+    "editor.formatOnSave": true,
+    "javascript.format.placeOpenBraceOnNewLineForFunctions": true,
+    "javascript.format.placeOpenBraceOnNewLineForControlBlocks": false,
+    "typescript.format.placeOpenBraceOnNewLineForControlBlocks": false,
+    "typescript.format.placeOpenBraceOnNewLineForFunctions": false,
+    "editor.formatOnType": true,
+    "C_Cpp.clang_format_style": "Visual Studio",
+    "C_Cpp.vcFormat.indent.braces": true,
+    "C_Cpp.vcFormat.indent.accessSpecifiers": true,
+    "C_Cpp.vcFormat.indent.caseLabels": true,
+    "C_Cpp.vcFormat.indent.caseContentsWhenBlock": true,
+    "C_Cpp.vcFormat.newLine.beforeOpenBrace.block": "sameLine"
 }

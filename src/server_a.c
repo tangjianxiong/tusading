@@ -5,17 +5,16 @@
 #include "../hdr/protocol.h"
 #include "../hdr/netlink.h"
 
-char hashstr[MAX_MSG_SIZE];
-char hashstr_file[64];
-FILE *fp1 = NULL;
-FILE *fp2 = NULL;
-char filename_upload_b[MAX_FILENAME_SIZE] = {0};
-char filename_upload_c[MAX_FILENAME_SIZE] = {0};
+char g_hashstr[MAX_MSG_SIZE] = {0};
+char g_hashstr_file[64] = {0};
+char g_filename_upload_b[MAX_FILENAME_SIZE] = {0};
+char g_filename_upload_c[MAX_FILENAME_SIZE] = {0};
+FILE *g_fp1 = NULL;
+FILE *g_fp2 = NULL;
 
 void *thread_recv_message(void *arg)
 {
-    // int thrd_num = *((int *)arg);
-    int len;
+    int len = 0;
     int sock_fd = 3;
     char send = 0;
     char msgtype = 0;
@@ -24,8 +23,8 @@ void *thread_recv_message(void *arg)
     unsigned char msg[MAX_MSG_SIZE];
     unsigned char hashstr1[16];
     unsigned char hash_send[20];
-    unsigned char replystr1[4] = "\0";
-    unsigned char replystr2[3] = "\0";
+    unsigned char replystr1[4] = {0};
+    unsigned char replystr2[3] = {0};
     char filename_download[MAX_FILENAME_SIZE] = {0};
 
     char buffer_filename[MAX_PACK_SIZE] = {0};
@@ -44,15 +43,13 @@ void *thread_recv_message(void *arg)
             switch (msgtype)
             {
             case DATA_KMSG:
-                /* 内核反馈消息 */
                 memset(encode_msg, 0, sizeof(encode_msg));
                 break;
             case DATA_MSG:
-                /* 消息类型 */
                 msg_decode(encode_msg, strlen(encode_msg), msg);
                 printf("[recv message]%s[end]\n", msg);
                 printf("[sender]%c\n", send);
-                hash_calculate(msg, strlen(msg), hashstr1);
+                hash_str(msg, strlen(msg), hashstr1);
                 // printf("[HASH]");
                 // print_hexData(hashstr1, 16);
                 pack(hashstr1, 16, send, NAME_A, DATA_HASH, hash_send);
@@ -63,12 +60,10 @@ void *thread_recv_message(void *arg)
                 memset(hash_send, 0, sizeof(hash_send));
                 break;
             case DATA_HASH:
-                /* hash值 */
-                hash_verify(hashstr, encode_msg);
-                memset(hashstr, 0, sizeof(hashstr));
+                hash_verify(g_hashstr, encode_msg);
+                memset(g_hashstr, 0, sizeof(g_hashstr));
                 break;
             case DATA_CON:
-                /* 连接请求 */
                 strcpy(replystr1, "y");
                 strcpy(replystr2, "no");
                 if (passwd_vertify(encode_msg, send))
@@ -85,15 +80,14 @@ void *thread_recv_message(void *arg)
                 bzero(replystr2, sizeof(replystr2));
                 break;
             case DATA_FILE_DOWNLOAD:
-                /* 文件下载 */
                 bzero(filename_download, MAX_FILENAME_SIZE);
                 strncpy(filename_download, encode_msg, strlen(encode_msg));
                 printf("prepare to send file:%s\n", filename_download);
                 // printf("file mode\n");
                 printf("sending the file:%s\n", filename_download);
-                bzero(hashstr_file, sizeof(hashstr_file));
-                hash_file(filename_download, hashstr_file);
-                printf("%s  %s\n", hashstr_file, filename_download);
+                bzero(g_hashstr_file, sizeof(g_hashstr_file));
+                hash_file(filename_download, g_hashstr_file);
+                printf("%s  %s\n", g_hashstr_file, filename_download);
                 //open file and send to client
                 FILE *fp = fopen(filename_download, "r");
                 if (NULL == fp)
@@ -104,7 +98,7 @@ void *thread_recv_message(void *arg)
                 {
                     bzero(buffer_read, MAX_MSG_SIZE);
                     int length = 0;
-                    // 每读取一段数据，便将其发送给客户端，循环直到文件读完为止
+                    /* Read the data and send it to the client, looping until the file is read */
                     while ((length = fread(buffer_read, sizeof(char), MAX_MSG_SIZE, fp)) > 0)
                     {
                         //usleep(5000);
@@ -116,15 +110,10 @@ void *thread_recv_message(void *arg)
                         bzero(buffer_encode, MAX_MSG_SIZE);
                         bzero(buffer_pack, MAX_PACK_SIZE);
                     }
-                    //消息发送完毕，发送文件hash值进行校验。
-                    pack(hashstr_file, strlen(hashstr_file), send, NAME_A, 'e', buffer_pack);
+                    /* After the message is sent, the file hash value is sent for verification. */
+                    pack(g_hashstr_file, strlen(g_hashstr_file), send, NAME_A, 'e', buffer_pack);
                     netlink_send_message(sock_fd, buffer_pack, strlen(buffer_pack) + 1, PID_A, 0, 0);
-
-                    // 关闭文件
                     fclose(fp);
-
-                    //获取客户端接收到的文件的md5值，进行校验
-                    //返回校验结果给客户端
                     printf("File:%s Transfer Successful!\n", filename_download);
                 }
 
@@ -138,36 +127,33 @@ void *thread_recv_message(void *arg)
                 bzero(buffer_unpack, MAX_PACK_SIZE);
                 break;
             case DATA_FILE_UPLOAD:
-                /* 文件上传 */
                 switch (send)
                 {
                 case NAME_B:
-                    bzero(filename_upload_b, MAX_FILENAME_SIZE);
-                    strncpy(filename_upload_b, encode_msg, strlen(encode_msg));
-                    printf("recving the file:%s from B\n", filename_upload_b);
-                    fp2 = fopen(filename_upload_b, "w");
-                    if (NULL == fp2)
+                    bzero(g_filename_upload_b, MAX_FILENAME_SIZE);
+                    strncpy(g_filename_upload_b, encode_msg, strlen(encode_msg));
+                    printf("recving the file:%s from B\n", g_filename_upload_b);
+                    g_fp2 = fopen(g_filename_upload_b, "w");
+                    if (NULL == g_fp2)
                     {
-                        printf("File:\t%s Can Not Open To Write\n", filename_upload_b);
+                        printf("File:\t%s Can Not Open To Write\n", g_filename_upload_b);
                     }
                     break;
                 case NAME_C:
-                    bzero(filename_upload_c, MAX_FILENAME_SIZE);
-                    strncpy(filename_upload_c, encode_msg, strlen(encode_msg));
-                    printf("recving the file:%s from C\n", filename_upload_c);
-                    fp1 = fopen(filename_upload_c, "w");
-                    if (NULL == fp1)
+                    bzero(g_filename_upload_c, MAX_FILENAME_SIZE);
+                    strncpy(g_filename_upload_c, encode_msg, strlen(encode_msg));
+                    printf("recving the file:%s from C\n", g_filename_upload_c);
+                    g_fp1 = fopen(g_filename_upload_c, "w");
+                    if (NULL == g_fp1)
                     {
-                        printf("File:\t%s Can Not Open To Write\n", filename_upload_c);
+                        printf("File:\t%s Can Not Open To Write\n", g_filename_upload_c);
                     }
                     break;
                 default:
                     break;
                 }
-
                 break;
             case DATA_FILE_TXT:
-                /* 上传文件内容 */
                 switch (send)
                 {
                 case NAME_B:
@@ -175,7 +161,7 @@ void *thread_recv_message(void *arg)
                     strncpy(buffer_encode, encode_msg, strlen(encode_msg));
                     msg_decode(buffer_encode, strlen(buffer_encode), buffer_write);
                     //printf("[message]%s[len]%d\n", buffer_write, strlen(buffer_write));
-                    int num1 = fwrite(buffer_write, sizeof(char), strlen(buffer_write), fp2);
+                    int num1 = fwrite(buffer_write, sizeof(char), strlen(buffer_write), g_fp2);
                     printf("success to write %d bytes\n", num1);
                     bzero(buffer_write, MAX_MSG_SIZE);
                     bzero(encode_msg, MAX_ENCODE_SIZE);
@@ -186,7 +172,7 @@ void *thread_recv_message(void *arg)
                     strncpy(buffer_encode, encode_msg, strlen(encode_msg));
                     msg_decode(buffer_encode, strlen(buffer_encode), buffer_write);
                     //printf("[message]%s[len]%d\n", buffer_write, strlen(buffer_write));
-                    int num = fwrite(buffer_write, sizeof(char), strlen(buffer_write), fp1);
+                    int num = fwrite(buffer_write, sizeof(char), strlen(buffer_write), g_fp1);
                     printf("success to write %d bytes\n", num);
                     bzero(buffer_write, MAX_MSG_SIZE);
                     bzero(encode_msg, MAX_ENCODE_SIZE);
@@ -197,22 +183,21 @@ void *thread_recv_message(void *arg)
                 }
                 break;
             case DATA_FILE_END:
-                /* 上传文件结束信号 */
                 switch (send)
                 {
                 case NAME_B:
-                    fclose(fp2);
-                    hash_file(filename_upload_b, buffer_hash);
-                    printf("success recv from B:[hash]%s[file]%s\n", buffer_hash, filename_upload_b);
+                    fclose(g_fp2);
+                    hash_file(g_filename_upload_b, buffer_hash);
+                    printf("success recv from B:[hash]%s[file]%s\n", buffer_hash, g_filename_upload_b);
                     pack(buffer_hash, strlen(buffer_hash), NAME_B, NAME_A, DATA_FILE_END, buffer_pack);
                     netlink_send_message(sock_fd, buffer_pack, strlen(buffer_pack) + 1, PID_A, 0, 0);
                     bzero(buffer_hash, sizeof(buffer_hash));
                     bzero(buffer_pack, MAX_PACK_SIZE);
                     break;
                 case NAME_C:
-                    fclose(fp1);
-                    hash_file(filename_upload_c, buffer_hash);
-                    printf("success recv from C:[hash]%s[file]%s\n", buffer_hash, filename_upload_c);
+                    fclose(g_fp1);
+                    hash_file(g_filename_upload_c, buffer_hash);
+                    printf("success recv from C:[hash]%s[file]%s\n", buffer_hash, g_filename_upload_c);
                     pack(buffer_hash, strlen(buffer_hash), NAME_C, NAME_A, DATA_FILE_END, buffer_pack);
                     netlink_send_message(sock_fd, buffer_pack, strlen(buffer_pack) + 1, PID_A, 0, 0);
                     bzero(buffer_hash, sizeof(buffer_hash));
@@ -233,19 +218,14 @@ void *thread_recv_message(void *arg)
 int main()
 {
     int sock_fd;
-    // int len;
-
-    unsigned char sendbuf[MAX_MSG_SIZE]; //缓存输入数据
+    unsigned char sendbuf[MAX_MSG_SIZE];
     unsigned char sendbuf_encode[MAX_MSG_SIZE];
     unsigned char sendbuf_pack[MAX_MSG_SIZE];
-    // unsigned char buf[MAX_MSG_SIZE]; //接收消息
-    // unsigned char buf_hash[MAX_MSG_SIZE];
+
     pthread_t tid[THREAD_NUMBER];
     int no;
     char recv;
-    // char msgtype;
-
-    //creat socket
+    /* Communication initialization */
     sock_fd = netlink_init(PID_A);
     for (no = 0; no < THREAD_NUMBER; no++)
     {
@@ -268,7 +248,7 @@ int main()
         if (find)
             *find = '\0';
 
-        hash_calculate(sendbuf, strlen(sendbuf), hashstr);
+        hash_str(sendbuf, strlen(sendbuf), g_hashstr);
         //printf("[HASH]The original hash value:");
         //print_hexData(s_hashstr[s_hashstr_i], 16);
         msg_encode(sendbuf, strlen(sendbuf), sendbuf_encode);

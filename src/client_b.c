@@ -4,7 +4,7 @@
 #include "../hdr/connect.h"
 #include "../hdr/protocol.h"
 #include "../hdr/netlink.h"
-char s_hashstr[MAX_MSG_SIZE];
+char g_hashstr[MAX_MSG_SIZE];
 
 void *thread_recv_message(void *arg)
 {
@@ -26,22 +26,19 @@ void *thread_recv_message(void *arg)
             {
             case DATA_KMSG:
                 //printf("[kernel message]:%s\n", encode_msg);
-
                 break;
             case DATA_MSG:
                 msg_decode(encode_msg, strlen(encode_msg), msg);
                 printf("[message]recv the msg:%s ", msg);
                 printf("[sender]%c\n", send);
-                hash_calculate(msg, strlen(msg), hashstr1);
-                printf("[HASH]");
-                print_hexData(hashstr1, 16);
+                hash_str(msg, strlen(msg), hashstr1);
+                printf("[HASH]%s\n", hashstr1);
                 pack(hashstr1, 16, send, NAME_B, DATA_HASH, hash_send);
                 netlink_send_message(sock_fd, hash_send, strlen(hash_send) + 1, PID_B, 0, 0);
-
                 break;
             case DATA_HASH:
-                hash_verify(s_hashstr, encode_msg);
-                bzero(s_hashstr, MAX_MSG_SIZE);
+                hash_verify(g_hashstr, encode_msg);
+                bzero(g_hashstr, MAX_MSG_SIZE);
                 break;
             case DATA_CON:
                 break;
@@ -109,7 +106,6 @@ int main(int argc, char *argv[])
         printf("file mode\n");
         while (1)
         {
-
             printf("please choose the way:(1 or 2)\n");
             printf("1. download the file from server\n");
             printf("2. upload the file to server\n");
@@ -296,9 +292,8 @@ int main(int argc, char *argv[])
             if (find)
                 *find = '\0';
 
-            hash_calculate(sendbuf, strlen(sendbuf), s_hashstr);
-            printf("[HASH]The original hash value:");
-            print_hexData(s_hashstr, 16);
+            hash_str(sendbuf, strlen(sendbuf), g_hashstr);
+            printf("[original HASH]%s\n", g_hashstr);
             msg_encode(sendbuf, strlen(sendbuf), sendbuf_encode);
             memset(sendbuf, 0, sizeof(sendbuf));
             printf("[CODEC]the encoded message is:%s\n", sendbuf_encode);

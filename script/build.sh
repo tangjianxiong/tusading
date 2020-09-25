@@ -1,5 +1,6 @@
 #!/bin/bash
 #cd ~/tusading
+source config
 cd kernelspace/
 make
 mv kernel_k.ko ../out/

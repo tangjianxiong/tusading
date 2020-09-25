@@ -1,0 +1,8 @@
+#
+# P166 KERNEL_CONNECTION_K
+#
+
+config P166_KERNEL_CONNECTION_K
+  tristate "P166 kernel k"
+  default m
+  ---help---

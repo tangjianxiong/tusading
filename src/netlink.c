@@ -1,5 +1,6 @@
 #include "../hdr/netlink.h"
 #include "../hdr/protocol.h"
+extern int errno;
 int netlink_create_socket(void)
 {
     //create a socket
@@ -66,7 +67,7 @@ int netlink_send_message(int sock_fd, const unsigned char *message, int len, uns
     free(nlh);
     return 0;
 }
-extern int errno;
+
 int netlink_recv_message(int sock_fd, unsigned char *message, int *len)
 {
     struct nlmsghdr *nlh = NULL;

@@ -1,14 +1,14 @@
 #include "../hdr/encapsulation.h"
 
 #include "../hdr/codec.h"
-#include "../hdr/hash.h"
 #include "../hdr/connect.h"
-#include "../hdr/protocol.h"
+#include "../hdr/hash.h"
 #include "../hdr/netlink.h"
-char s_hashstr[MAX_MSG_SIZE];
+#include "../hdr/protocol.h"
+char g_hashstr[MAX_MSG_SIZE];
+
 void *thread_recv_message(void *arg)
 {
-    //int thrd_num = *((int *)arg);
     int len;
     int sock_fd = 3;
     char send = 0;
@@ -33,19 +33,19 @@ void *thread_recv_message(void *arg)
                 msg_decode(encode_msg, strlen(encode_msg), msg);
                 printf("[message]recv the msg:%s ", msg);
                 printf("[sender]%c\n", send);
-                hash_calculate(msg, strlen(msg), hashstr1);
-                printf("[HASH]");
-                print_hexData(hashstr1, 16);
+                hash_str(msg, strlen(msg), hashstr1);
+                printf("[HASH]%s\n", hashstr1);
                 pack(hashstr1, 16, send, NAME_C, DATA_HASH, hash_send);
-                netlink_send_message(sock_fd, hash_send, strlen(hash_send) + 1, PID_C, 0, 0);
+                netlink_send_message(sock_fd, hash_send, strlen(hash_send) + 1, PID_C,
+                                     0, 0);
                 memset(msg, 0, sizeof(msg));
                 memset(hashstr1, 0, sizeof(hashstr1));
                 memset(encode_msg, 0, sizeof(encode_msg));
                 memset(hash_send, 0, sizeof(hash_send));
                 break;
             case DATA_HASH:
-                hash_verify(s_hashstr, encode_msg);
-                bzero(s_hashstr, MAX_MSG_SIZE);
+                hash_verify(g_hashstr, encode_msg);
+                bzero(g_hashstr, MAX_MSG_SIZE);
                 break;
             case DATA_CON:
                 break;
@@ -56,15 +56,16 @@ void *thread_recv_message(void *arg)
         }
     }
 }
+
 int main(int argc, char *argv[])
 {
     int sock_fd;
     int len;
     char *find;
-    unsigned char sendbuf[MAX_MSG_SIZE]; //缓存输入数据
+    unsigned char sendbuf[MAX_MSG_SIZE];
     unsigned char sendbuf_encode[MAX_MSG_SIZE];
     unsigned char sendbuf_pack[MAX_MSG_SIZE];
-    unsigned char buf[MAX_MSG_SIZE]; //接收消息
+    unsigned char buf[MAX_MSG_SIZE];
     unsigned char buf_hash[MAX_MSG_SIZE];
     pthread_t tid[THREAD_NUMBER];
     int no, res;
@@ -122,8 +123,10 @@ int main(int argc, char *argv[])
                 if (find)
                     *find = '\0';
                 printf("prepare to download the file %s\n", filename);
-                pack(filename, strlen(filename), NAME_A, NAME_C, DATA_FILE_DOWNLOAD, buffer_filename);
-                netlink_send_message(sock_fd, buffer_filename, strlen(buffer_filename) + 1, PID_C, 0, 0);
+                pack(filename, strlen(filename), NAME_A, NAME_C, DATA_FILE_DOWNLOAD,
+                     buffer_filename);
+                netlink_send_message(sock_fd, buffer_filename,
+                                     strlen(buffer_filename) + 1, PID_C, 0, 0);
                 FILE *fp = fopen(filename, "w");
                 if (NULL == fp)
                 {
@@ -141,13 +144,15 @@ int main(int argc, char *argv[])
                         {
                         case DATA_FILE_DOWNLOAD:
                             msg_decode(buffer_encode, strlen(buffer_encode), buffer_write);
-                            //printf("[message]%s[len]%d\n", buffer_write, strlen(buffer_write));
-                            int num = fwrite(buffer_write, sizeof(char), strlen(buffer_write), fp);
+                            // printf("[message]%s[len]%d\n", buffer_write,
+                            // strlen(buffer_write));
+                            int num =
+                                fwrite(buffer_write, sizeof(char), strlen(buffer_write), fp);
                             printf("success to write %d bytes\n", num);
                             break;
                         case DATA_FILE_END:
                             memcpy(hashstr_file_cmp, buffer_encode, strlen(buffer_encode));
-                            //printf("[recv hash]%s[end]\n", hashstr_file_cmp);
+                            // printf("[recv hash]%s[end]\n", hashstr_file_cmp);
                             goto end;
                             break;
                         default:
@@ -201,34 +206,43 @@ int main(int argc, char *argv[])
                 }
                 bzero(hashstr_file, 64);
                 hash_file(filename, hashstr_file);
-                pack(filename, strlen(filename), NAME_A, NAME_C, DATA_FILE_UPLOAD, buffer_filename);
-                netlink_send_message(sock_fd, buffer_filename, strlen(buffer_filename) + 1, PID_C, 0, 0);
+                pack(filename, strlen(filename), NAME_A, NAME_C, DATA_FILE_UPLOAD,
+                     buffer_filename);
+                netlink_send_message(sock_fd, buffer_filename,
+                                     strlen(buffer_filename) + 1, PID_C, 0, 0);
                 printf("prepare to upload the file %s\n", filename);
                 usleep(5000);
                 bzero(buffer_read, MAX_MSG_SIZE);
                 int length = 0;
-                while ((length = fread(buffer_read, sizeof(char), MAX_MSG_SIZE, fp)) > 0)
+                while ((length = fread(buffer_read, sizeof(char), MAX_MSG_SIZE, fp)) >
+                       0)
                 {
                     usleep(1000);
                     msg_encode(buffer_read, strlen(buffer_read), buffer_encode);
-                    pack(buffer_encode, strlen(buffer_encode), NAME_A, NAME_C, DATA_FILE_TXT, buffer_pack);
-                    netlink_send_message(sock_fd, buffer_pack, strlen(buffer_pack) + 1, PID_C, 0, 0);
+                    pack(buffer_encode, strlen(buffer_encode), NAME_A, NAME_C,
+                         DATA_FILE_TXT, buffer_pack);
+                    netlink_send_message(sock_fd, buffer_pack, strlen(buffer_pack) + 1,
+                                         PID_C, 0, 0);
                     printf("upload len %d msg\n", length);
                     bzero(buffer_read, MAX_MSG_SIZE);
                     bzero(buffer_encode, MAX_MSG_SIZE);
                     bzero(buffer_pack, MAX_PACK_SIZE);
                 }
-                // pack(endstr, strlen(endstr), NAME_A, NAME_C, DATA_FILE_TXT, buffer_pack);
-                // netlink_send_message(sock_fd, buffer_pack, strlen(buffer_pack) + 1, PID_C, 0, 0);
+                // pack(endstr, strlen(endstr), NAME_A, NAME_C, DATA_FILE_TXT,
+                // buffer_pack); netlink_send_message(sock_fd, buffer_pack,
+                // strlen(buffer_pack) + 1, PID_C, 0, 0);
                 usleep(5000);
-                pack(endstr, strlen(endstr), NAME_A, NAME_C, DATA_FILE_END, buffer_pack);
-                netlink_send_message(sock_fd, buffer_pack, strlen(buffer_pack) + 1, PID_C, 0, 0);
+                pack(endstr, strlen(endstr), NAME_A, NAME_C, DATA_FILE_END,
+                     buffer_pack);
+                netlink_send_message(sock_fd, buffer_pack, strlen(buffer_pack) + 1,
+                                     PID_C, 0, 0);
                 printf("waiting for hashstr to vertify...\n");
                 bzero(buffer_pack, MAX_PACK_SIZE);
                 if (netlink_recv_message(sock_fd, buffer_pack, &len) == 0)
                 {
                     bzero(hashstr_file_cmp, 64);
-                    unpack(buffer_pack, strlen(buffer_pack), &send, &msgtype, hashstr_file_cmp);
+                    unpack(buffer_pack, strlen(buffer_pack), &send, &msgtype,
+                           hashstr_file_cmp);
                     printf("[hashstr]%s\n", hashstr_file_cmp);
                 }
                 if (strcmp(hashstr_file, hashstr_file_cmp) == 0)
@@ -253,14 +267,16 @@ int main(int argc, char *argv[])
         printf("message mode\n");
         while (1)
         {
-            printf("you are not yet been connected, please enter the password to connect\n");
+            printf("you are not yet been connected, please enter the password to "
+                   "connect\n");
             printf("[enter the passwd]:");
             fgets(passwd, sizeof(passwd), stdin);
             find = strchr(passwd, '\n');
             if (find)
                 *find = '\0';
             pack(passwd, strlen(passwd), NAME_A, NAME_C, DATA_CON, sendbuf_con);
-            netlink_send_message(sock_fd, sendbuf_con, strlen(sendbuf_con) + 1, PID_C, 0, 0);
+            netlink_send_message(sock_fd, sendbuf_con, strlen(sendbuf_con) + 1, PID_C,
+                                 0, 0);
             memset(sendbuf_con, 0, sizeof(sendbuf_con));
             printf("waitting the server...\n");
             netlink_recv_message(sock_fd, buf, &len);
@@ -273,7 +289,7 @@ int main(int argc, char *argv[])
             memset(buf, 0, sizeof(buf));
             memset(replymsg, 0, sizeof(replymsg));
         }
-        //pthread_create(&tid, NULL, thread_recv_message, NULL);
+        // pthread_create(&tid, NULL, thread_recv_message, NULL);
         for (no = 0; no < THREAD_NUMBER; no++)
         {
             res = pthread_create(&tid[no], NULL, thread_recv_message, &no);
@@ -294,9 +310,8 @@ int main(int argc, char *argv[])
             if (find)
                 *find = '\0';
 
-            hash_calculate(sendbuf, strlen(sendbuf), s_hashstr);
-            printf("[HASH]The original hash value:");
-            print_hexData(s_hashstr, 16);
+            hash_str(sendbuf, strlen(sendbuf), g_hashstr);
+            printf("[original HASH]%s", g_hashstr);
             msg_encode(sendbuf, strlen(sendbuf), sendbuf_encode);
             memset(sendbuf, 0, sizeof(sendbuf));
             printf("[CODEC]the encoded message is:%s\n", sendbuf_encode);
@@ -305,9 +320,11 @@ int main(int argc, char *argv[])
             scanf("%c", &recv);
             getchar();
 
-            pack(sendbuf_encode, strlen(sendbuf_encode), recv, NAME_C, DATA_MSG, sendbuf_pack);
+            pack(sendbuf_encode, strlen(sendbuf_encode), recv, NAME_C, DATA_MSG,
+                 sendbuf_pack);
             printf("[PACK]the packed message is:%s\n", sendbuf_pack);
-            netlink_send_message(sock_fd, sendbuf_pack, strlen(sendbuf_pack) + 1, PID_C, 0, 0);
+            netlink_send_message(sock_fd, sendbuf_pack, strlen(sendbuf_pack) + 1,
+                                 PID_C, 0, 0);
             memset(sendbuf_pack, 0, sizeof(sendbuf_pack));
             memset(sendbuf_encode, 0, sizeof(sendbuf_encode));
         }

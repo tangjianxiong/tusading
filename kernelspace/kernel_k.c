@@ -18,13 +18,16 @@
 #define PID_A (100)
 #define PID_B (101)
 #define PID_C (102)
+
 #define MAX_PAYLOAD (1400)
 #define MAX_PACK_SIZE (1400)
+
 #define DATA_MSG 'm'
 #define DATA_CON 'r'
 #define DATA_KMSG 'k'
 #define DATA_HASH 'h'
 #define DATA_FILE 'f'
+
 #define NAME_A 'a'
 #define NAME_B 'b'
 #define NAME_C 'c'
@@ -54,11 +57,9 @@ static int getpid(char a)
     case NAME_B:
         res = PID_B;
         break;
-
     case NAME_C:
         res = PID_C;
         break;
-
     default:
         res = -1;
         break;
@@ -115,15 +116,11 @@ static void netlink_send(int pid, uint8_t *message, int len)
     struct nlmsghdr *nlh;
     int ret = 0;
     if (!message || !nl_sk)
-    {
         return;
-    }
 
     skb_1 = alloc_skb(NLMSG_SPACE(len), GFP_KERNEL);
     if (!skb_1)
-    {
         printk(KERN_ERR "alloc_skb error!\n");
-    }
 
     nlh = nlmsg_put(skb_1, 0, 0, 0, len, 0);
     NETLINK_CB(skb_1).portid = 0;
@@ -131,13 +128,11 @@ static void netlink_send(int pid, uint8_t *message, int len)
     memcpy(NLMSG_DATA(nlh), message, len);
     ret = netlink_unicast(nl_sk, skb_1, pid, 0);
     if (ret < 0)
-    {
         printk(KERN_ALERT "[send error]%d\n", ret);
-    }
 }
+
 char str[MAX_PACK_SIZE];
 char str1[MAX_PACK_SIZE];
-
 /* kernel netlink recv */
 static void netlink_input(struct sk_buff *__skb)
 {
@@ -151,15 +146,11 @@ static void netlink_input(struct sk_buff *__skb)
     //char kmsg_conerr[] = "kkConnection has not been established!";
 
     if (!__skb)
-    {
         return;
-    }
 
     skb = skb_get(__skb);
     if (skb->len < NLMSG_SPACE(0))
-    {
         return;
-    }
 
     nlh = nlmsg_hdr(skb);
     memset(str, 0, sizeof(str));
@@ -182,6 +173,7 @@ static void netlink_input(struct sk_buff *__skb)
     msgtype = 0;
     recv = 0;
 }
+
 /* Get process state */
 static int thread_get_pstate(void *data)
 {
@@ -214,6 +206,7 @@ static int thread_get_pstate(void *data)
 
     return 0;
 }
+
 static __init int netlink_init(void)
 {
     int result;
