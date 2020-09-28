@@ -37,7 +37,7 @@ void *thread_recv_message(void *arg)
     //printf("recv_thread %d start receiving messages...\n", thrd_num);
     while (1)
     {
-        if (netlink_recv_message(sock_fd, buf, &len) == 0)
+        if (communication_recv_message(sock_fd, buf, &len) == 0)
         {
             unpack(buf, len, &send, &msgtype, encode_msg);
             switch (msgtype)
@@ -53,7 +53,7 @@ void *thread_recv_message(void *arg)
                 // printf("[HASH]");
                 // print_hexData(hashstr1, 16);
                 pack(hashstr1, 16, send, NAME_A, DATA_HASH, hash_send);
-                netlink_send_message(sock_fd, hash_send, strlen(hash_send) + 1, PID_A, 0, 0);
+                communication_send_message(sock_fd, hash_send, strlen(hash_send) + 1, PID_A, 0, 0);
                 memset(msg, 0, sizeof(msg));
                 memset(hashstr1, 0, sizeof(hashstr1));
                 memset(encode_msg, 0, sizeof(encode_msg));
@@ -69,12 +69,12 @@ void *thread_recv_message(void *arg)
                 if (passwd_vertify(encode_msg, send))
                 {
                     pack(replystr1, strlen(replystr1), send, NAME_A, DATA_CON, msg);
-                    netlink_send_message(sock_fd, msg, strlen(msg) + 1, PID_A, 0, 0);
+                    communication_send_message(sock_fd, msg, strlen(msg) + 1, PID_A, 0, 0);
                 }
                 else
                 {
                     pack(replystr2, strlen(replystr2), send, NAME_A, DATA_CON, msg);
-                    netlink_send_message(sock_fd, msg, strlen(msg) + 1, PID_A, 0, 0);
+                    communication_send_message(sock_fd, msg, strlen(msg) + 1, PID_A, 0, 0);
                 }
                 bzero(replystr1, sizeof(replystr1));
                 bzero(replystr2, sizeof(replystr2));
@@ -104,7 +104,7 @@ void *thread_recv_message(void *arg)
                         //usleep(5000);
                         msg_encode(buffer_read, strlen(buffer_read), buffer_encode);
                         pack(buffer_encode, strlen(buffer_encode), send, NAME_A, DATA_FILE_DOWNLOAD, buffer_pack);
-                        netlink_send_message(sock_fd, buffer_pack, strlen(buffer_pack) + 1, PID_A, 0, 0);
+                        communication_send_message(sock_fd, buffer_pack, strlen(buffer_pack) + 1, PID_A, 0, 0);
                         printf("send len %d msg\n", length);
                         bzero(buffer_read, MAX_MSG_SIZE);
                         bzero(buffer_encode, MAX_MSG_SIZE);
@@ -112,7 +112,7 @@ void *thread_recv_message(void *arg)
                     }
                     /* After the message is sent, the file hash value is sent for verification. */
                     pack(g_hashstr_file, strlen(g_hashstr_file), send, NAME_A, 'e', buffer_pack);
-                    netlink_send_message(sock_fd, buffer_pack, strlen(buffer_pack) + 1, PID_A, 0, 0);
+                    communication_send_message(sock_fd, buffer_pack, strlen(buffer_pack) + 1, PID_A, 0, 0);
                     fclose(fp);
                     printf("File:%s Transfer Successful!\n", filename_download);
                 }
@@ -190,7 +190,7 @@ void *thread_recv_message(void *arg)
                     hash_file(g_filename_upload_b, buffer_hash);
                     printf("success recv from B:[hash]%s[file]%s\n", buffer_hash, g_filename_upload_b);
                     pack(buffer_hash, strlen(buffer_hash), NAME_B, NAME_A, DATA_FILE_END, buffer_pack);
-                    netlink_send_message(sock_fd, buffer_pack, strlen(buffer_pack) + 1, PID_A, 0, 0);
+                    communication_send_message(sock_fd, buffer_pack, strlen(buffer_pack) + 1, PID_A, 0, 0);
                     bzero(buffer_hash, sizeof(buffer_hash));
                     bzero(buffer_pack, MAX_PACK_SIZE);
                     break;
@@ -199,7 +199,7 @@ void *thread_recv_message(void *arg)
                     hash_file(g_filename_upload_c, buffer_hash);
                     printf("success recv from C:[hash]%s[file]%s\n", buffer_hash, g_filename_upload_c);
                     pack(buffer_hash, strlen(buffer_hash), NAME_C, NAME_A, DATA_FILE_END, buffer_pack);
-                    netlink_send_message(sock_fd, buffer_pack, strlen(buffer_pack) + 1, PID_A, 0, 0);
+                    communication_send_message(sock_fd, buffer_pack, strlen(buffer_pack) + 1, PID_A, 0, 0);
                     bzero(buffer_hash, sizeof(buffer_hash));
                     bzero(buffer_pack, MAX_PACK_SIZE);
                     break;
@@ -226,7 +226,7 @@ int main()
     int no;
     char recv;
     /* Communication initialization */
-    sock_fd = netlink_init(PID_A);
+    sock_fd = communication_init(PID_A);
     for (no = 0; no < THREAD_NUMBER; no++)
     {
         int res = pthread_create(&tid[no], NULL, thread_recv_message, &no);
@@ -262,7 +262,7 @@ int main()
         pack(sendbuf_encode, strlen(sendbuf_encode), recv, 'a', 'm', sendbuf_pack);
         //printf("[PACK]the packed message is:%s\n", sendbuf_pack);
 
-        netlink_send_message(sock_fd, sendbuf_pack, strlen(sendbuf_pack) + 1, PID_A, 0, 0);
+        communication_send_message(sock_fd, sendbuf_pack, strlen(sendbuf_pack) + 1, PID_A, 0, 0);
         memset(sendbuf_pack, 0, sizeof(sendbuf_pack));
         memset(sendbuf_encode, 0, sizeof(sendbuf_encode));
     }

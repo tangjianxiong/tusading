@@ -19,7 +19,7 @@ void *thread_recv_message(void *arg)
     unsigned char hash_send[20];
     while (1)
     {
-        if (netlink_recv_message(sock_fd, buf, &len) == 0)
+        if (communication_recv_message(sock_fd, buf, &len) == 0)
         {
             unpack(buf, len, &send, &msgtype, encode_msg);
             switch (msgtype)
@@ -34,7 +34,7 @@ void *thread_recv_message(void *arg)
                 hash_str(msg, strlen(msg), hashstr1);
                 printf("[HASH]%s\n", hashstr1);
                 pack(hashstr1, 16, send, NAME_B, DATA_HASH, hash_send);
-                netlink_send_message(sock_fd, hash_send, strlen(hash_send) + 1, PID_B, 0, 0);
+                communication_send_message(sock_fd, hash_send, strlen(hash_send) + 1, PID_B, 0, 0);
                 break;
             case DATA_HASH:
                 hash_verify(g_hashstr, encode_msg);
@@ -87,7 +87,7 @@ int main(int argc, char *argv[])
         printf("help\n");
         return 0;
     }
-    sock_fd = netlink_init(PID_B);
+    sock_fd = communication_init(PID_B);
     if ((strcmp("--file", argv[1]) == 0) || ((strcmp("-f", argv[1]) == 0)))
     {
         int choose = 0;
@@ -121,7 +121,7 @@ int main(int argc, char *argv[])
                     *find = '\0';
                 printf("prepare to download the file %s\n", filename);
                 pack(filename, strlen(filename), NAME_A, NAME_B, DATA_FILE_DOWNLOAD, buffer_filename);
-                netlink_send_message(sock_fd, buffer_filename, strlen(buffer_filename) + 1, PID_C, 0, 0);
+                communication_send_message(sock_fd, buffer_filename, strlen(buffer_filename) + 1, PID_C, 0, 0);
                 FILE *fp = fopen(filename, "w");
                 if (NULL == fp)
                 {
@@ -131,7 +131,7 @@ int main(int argc, char *argv[])
                 printf("file %s open success!\n", filename);
                 while (1)
                 {
-                    if (netlink_recv_message(sock_fd, buffer_pack, &len) == 0)
+                    if (communication_recv_message(sock_fd, buffer_pack, &len) == 0)
                     {
                         unpack(buffer_pack, len, &send, &msgtype, buffer_encode);
                         bzero(buffer_pack, MAX_PACK_SIZE);
@@ -200,7 +200,7 @@ int main(int argc, char *argv[])
                 bzero(hashstr_file, 64);
                 hash_file(filename, hashstr_file);
                 pack(filename, strlen(filename), NAME_A, NAME_B, DATA_FILE_UPLOAD, buffer_filename);
-                netlink_send_message(sock_fd, buffer_filename, strlen(buffer_filename) + 1, PID_C, 0, 0);
+                communication_send_message(sock_fd, buffer_filename, strlen(buffer_filename) + 1, PID_C, 0, 0);
                 printf("prepare to upload the file %s\n", filename);
                 usleep(5000);
                 bzero(buffer_read, MAX_MSG_SIZE);
@@ -211,20 +211,20 @@ int main(int argc, char *argv[])
                     usleep(1000);
                     msg_encode(buffer_read, strlen(buffer_read), buffer_encode);
                     pack(buffer_encode, strlen(buffer_encode), NAME_A, NAME_B, DATA_FILE_TXT, buffer_pack);
-                    netlink_send_message(sock_fd, buffer_pack, strlen(buffer_pack) + 1, PID_C, 0, 0);
+                    communication_send_message(sock_fd, buffer_pack, strlen(buffer_pack) + 1, PID_C, 0, 0);
                     printf("upload len %d msg\n", length);
                     bzero(buffer_read, MAX_MSG_SIZE);
                     bzero(buffer_encode, MAX_MSG_SIZE);
                     bzero(buffer_pack, MAX_PACK_SIZE);
                 }
                 // pack(endstr, strlen(endstr), NAME_A, NAME_B, DATA_FILE_TXT, buffer_pack);
-                // netlink_send_message(sock_fd, buffer_pack, strlen(buffer_pack) + 1, PID_C, 0, 0);
+                // communication_send_message(sock_fd, buffer_pack, strlen(buffer_pack) + 1, PID_C, 0, 0);
                 usleep(5000);
                 pack(endstr, strlen(endstr), NAME_A, NAME_B, DATA_FILE_END, buffer_pack);
-                netlink_send_message(sock_fd, buffer_pack, strlen(buffer_pack) + 1, PID_C, 0, 0);
+                communication_send_message(sock_fd, buffer_pack, strlen(buffer_pack) + 1, PID_C, 0, 0);
                 printf("waiting for hashstr to vertify...\n");
                 bzero(buffer_pack, MAX_PACK_SIZE);
-                if (netlink_recv_message(sock_fd, buffer_pack, &len) == 0)
+                if (communication_recv_message(sock_fd, buffer_pack, &len) == 0)
                 {
                     bzero(hashstr_file_cmp, 64);
                     unpack(buffer_pack, strlen(buffer_pack), &send, &msgtype, hashstr_file_cmp);
@@ -259,10 +259,10 @@ int main(int argc, char *argv[])
             if (find)
                 *find = '\0';
             pack(passwd, strlen(passwd), NAME_A, NAME_B, DATA_CON, sendbuf_con);
-            netlink_send_message(sock_fd, sendbuf_con, strlen(sendbuf_con) + 1, PID_B, 0, 0);
+            communication_send_message(sock_fd, sendbuf_con, strlen(sendbuf_con) + 1, PID_B, 0, 0);
             memset(sendbuf_con, 0, sizeof(sendbuf_con));
             printf("waitting the server...\n");
-            netlink_recv_message(sock_fd, buf, &len);
+            communication_recv_message(sock_fd, buf, &len);
             unpack(buf, strlen(buf), &send1, &msgtype1, replymsg);
             if (replymsg[0] == 'y')
             {
@@ -304,7 +304,7 @@ int main(int argc, char *argv[])
 
             pack(sendbuf_encode, strlen(sendbuf_encode), recv, NAME_B, DATA_MSG, sendbuf_pack);
             printf("[PACK]the packed message is:%s[end]", sendbuf_pack);
-            netlink_send_message(sock_fd, sendbuf_pack, strlen(sendbuf_pack) + 1, PID_B, 0, 0);
+            communication_send_message(sock_fd, sendbuf_pack, strlen(sendbuf_pack) + 1, PID_B, 0, 0);
             memset(sendbuf_pack, 0, sizeof(sendbuf_pack));
             memset(sendbuf_encode, 0, sizeof(sendbuf_encode));
         }

@@ -3,9 +3,9 @@ NAME_B = client_b
 NAME_C = client_c
 
 TARGET = $(NAME_A) $(NAME_B) $(NAME_C)
-SOURCE_A =hash.c codec.c encapsulation.c connect.c server_a.c netlink.c md5.c
-SOURCE_B =hash.c codec.c encapsulation.c connect.c client_b.c netlink.c md5.c
-SOURCE_C =hash.c codec.c encapsulation.c connect.c client_c.c netlink.c md5.c
+SOURCE_A =hash.c codec.c encapsulation.c connect.c server_a.c netlink.c md5.c base64.c communication.c
+SOURCE_B =hash.c codec.c encapsulation.c connect.c client_b.c netlink.c md5.c base64.c communication.c
+SOURCE_C =hash.c codec.c encapsulation.c connect.c client_c.c netlink.c md5.c base64.c communication.c
 OBJ_A = $(patsubst %.c, %.o, $(SOURCE_A))
 OBJ_B = $(patsubst %.c, %.o, $(SOURCE_B))
 OBJ_C = $(patsubst %.c, %.o, $(SOURCE_C))

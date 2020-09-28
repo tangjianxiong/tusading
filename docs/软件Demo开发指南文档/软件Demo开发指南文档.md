@@ -1,21 +1,33 @@
 ---
-title: SWC虚拟项目
-subtitle: 开发指南
-author: allwinner
+title: 软件Demo
+subtitle: 开发指南文档
+author: KPA0527
 changelog:
-- ver: 0.1
-  date: 2020.9.15
-  author: allwinner
+- ver: 1.2
+  date: 2020.9.28
+  author: allwinnner
   desc: |
-	建立文档
+		 修改文档名称
+- ver: 1.1
+  date: 2020.9.28
+  author: KPA0527
+  desc: |
+	1. 增加接口所属文件
+	2. 修改编译指示
 - ver: 1.0
   date: 2020.9.24
-  author: allwinner
+  author: KPA0527
   desc: |
 	1.增加编译说明
-        2.增加接口所属文件 
+       2.增加接口所属文件 
+- ver: 0.1
+  date: 2020.9.15
+  author: KPA0527
+  desc: |
+	建立文档
 
 ---
+
 
 
 # 前言
@@ -186,6 +198,7 @@ sudo apt-get install zip
 ```
 
 ### windows PC开发环境搭建
+
 * 开发工具  
 代码编辑：SourceInsight、Notepad++等  
 串口工具：puTTY、Xshell、mobaxterm等  
@@ -201,24 +214,17 @@ tools/windows 7_10_ _32_64 USB-to-Serial Comm Port/windows 7_ 10
 ![串口驱动](figures/p2_串口驱动.png){width=50% height=50% position=center angle=0}
 
 :::note
-  有些电脑在设备上电并插上 USB 线之后，自动安装 USB 设备驱动程 序会失败。推荐使用驱动人生等软件，自动检索安装驱动程序。
+  有些电脑在设备上电并插上 USB 线之后，自动安装 USB 设备驱动程序会失败。推荐使用驱动人生等软件，自动检索安装驱动程序。
 :::
 
 ### 开发板介绍
+
 本Demo目前暂时在T5平台上运行测试，AW T5的公版如下
 
 ![开发板详情](figures/p3_开发板详情.png)
 
 ::: note
-
- 本软件demo的开发主要关注DCIN12V(连接 12V 直流电源)，CPU 调试串口，USB-OTG micro端口(用于烧录和ADB 调试)。
-
-:::
-
-容器测试：
-
-:::{.warning #ID1}
-这是一个警告内容
+本软件demo的开发主要关注DCIN12V(连接 12V 直流电源)，CPU 调试串口，USB-OTG micro端口(用于烧录和ADB 调试)。
 :::
 
 * 使用准备  
@@ -290,12 +296,18 @@ tools/windows 7_10_ _32_64 USB-to-Serial Comm Port/windows 7_ 10
 
 ## 编译方式
 ### 整体编译
-下载代码后进入demo顶级目录，配置好编译工具的环境变量，然后执行编译脚本即可。
+下载代码后进入demo顶级目录，按照实际编译环境配置好编译工具的环境变量，然后执行编译脚本即可。
 
 ```
-#export PATH=$PATH:tools/gcc-linaro-7.4.1-2019.02-x86_64_aarch64-linux-gnu/bin/
-#./script/build.sh
+#内核源码目录
+export KDIR=/home/tangjianxiong/work/T507/kunos/kernel/linux-4.9/
+export ARCH=arm64
+#交叉编译工具名
+export CROSS_COMPILE=aarch64-linux-gnu-
+#交叉编译工具目录
+export PATH=$PATH:~/work/T507/kunos/out/gcc-linaro-7.4.1-2019.02-x86_64_aarch64-linux-gnu/bin/
 ```
+
 编译后的四个产物会出现在out目录下，则编译成功，通过adb工具推到开发板上即可进行运行调试。
 
 ```
@@ -312,37 +324,6 @@ tools/windows 7_10_ _32_64 USB-to-Serial Comm Port/windows 7_ 10
 进入src/目录,执行make命令。
 ### 单独编译内核模块
 进入kernelspace目录，执行make命令。
-### openssl交叉编译
-本软件demo中调用了openssl中的相关库函数，某些开发板中可能没有相应的环境，需要自行交叉编译配置。
-
-* 设置环境变量
-
-```
-#export ARCH=arm64
-#export CROSS_COMPILE=aarch64-linux-gnu-
-#export PATH=$PATH:tools/gcc-linaro-7.4.1-2019.02-x86_64_aarch64-linux-gnu/bin/
-```
-* 获取openssl
-
-```
-wget https://www.openssl.org/source/openssl-1.1.1g.tar.gz
-tar -xvf openssl-1.1.1g.tar.gz
-```
-
-::: warning
-  新建安装目录 out，不要命名为 install，windows无法访问。
-:::
-
-* 配置、编译、安装
-
-
-```
-./Configure linux-aarch64 --prefix=/home/xixinle/bootcamp2020/src/lib/openssl-1.1.1g/out/
-make
-make install
-```
-
-编译完成之后生成的include和lib目录可被用于交叉编译链接，详情参见各目录下Makefile。
 
 ## 功能使用说明
 
@@ -374,14 +355,15 @@ insmod kernel_k.ko
 ```
 int msg_encode(const unsigned char *in, unsigned int inlen, char *out);
 ```
+* 所属文件：src/codec.c
 * 作用：数据编码
 * 参数：
-	- 参数1:待编码数据指针
-	- 参数2:待编码数据长度
-  - 参数3:接收编码后数据的变量
+    - 参数1:待编码数据指针
+    - 参数2:待编码数据长度
+    - 参数3:接收编码后数据的变量
 * 返回：
-	- 非负整型：编码后数据长度
-  - 负数：失败错误码
+    - 非负整型：编码后数据长度
+    - 负数：失败错误码
 
 
 ### [msg_decode]
@@ -389,27 +371,33 @@ int msg_encode(const unsigned char *in, unsigned int inlen, char *out);
 ```
 int msg_decode(const unsigned char *in, unsigned int inlen, char *out);
 ```
+* 所属文件：src/codec.c
 * 作用：数据解码
 * 参数：
 	- 参数1:待解码数据指针
 	- 参数2:待解码数据长度
-  - 参数3:接收解码后数据的变量
+    - 参数3:接收解码后数据的变量
 * 返回：
 	- 非负整型：解码后数据长度
-  - 负数：失败错误码
+    - 负数：失败错误码
+
 
 ## 连接控制模块
+
 ### [passwd_vertify]
+
 ```
 int passwd_vertify(char *passwd, char name);
 ```
+
+* 所属文件：src/connection.c
 * 作用：确认连接口令是否有效
 * 参数：
 	- 参数1:连接口令
 	- 参数2:连接客户端名称
 * 返回：
 	- 1：连接成功
-  - -1：连接失败
+    - -1：连接失败
 
 ## 封装模块
 ### [pack]
@@ -418,6 +406,7 @@ int passwd_vertify(char *passwd, char name);
 int pack(const unsigned char *in, unsigned int inlen, char recv, char send, char msgtype, char *out);
 ```
 
+* 所属文件：src/pack.c
 * 作用：数据封装，加入消息头
 * 参数：
 	- 参数1:待封装消息
@@ -425,15 +414,16 @@ int pack(const unsigned char *in, unsigned int inlen, char recv, char send, char
 	- 参数3:接收者名称
 	- 参数4:发送者名称
 	- 参数5:消息类型
-  - 参数6:接收封装后数据的变量
+    - 参数6:接收封装后数据的变量
 * 返回：
 	- 非负整型：封装后数据长度
-  - 负数：失败错误码
+    - 负数：失败错误码
 
 ### [unpack]
 ```
 int unpack(const unsigned char *in, unsigned int inlen, char *send, char *msgtype, char *out);
 ```
+* 所属文件：src/pack.c
 * 作用：数据解封，解析消息字符串、长度、发送者、消息类型
 * 参数：
 	- 参数1:待解封消息
@@ -451,6 +441,7 @@ int unpack(const unsigned char *in, unsigned int inlen, char *send, char *msgtyp
 int hash_str(const char *str, int len, char *output);
 ```
 
+* 所属文件：src/hash.c
 * 作用：计算字符串的hash值
 * 参数：
 	- 参数1:待计算的字符串
@@ -465,6 +456,7 @@ int hash_str(const char *str, int len, char *output);
 ```
 int hash_file(const char *str, int len, char *output);
 ```
+* 所属文件：src/hash.c
 * 作用：计算文件的hash值
 * 参数：
 	- 参数1:待计算文件的文件名
@@ -481,13 +473,14 @@ int hash_file(const char *str, int len, char *output);
 int netlink_init(int id);
 ```
 
+* 所属文件：src/netlink.c
 * 作用：netlink初始化，完成套接字创建和地址绑定
 * 参数：
-	- 参数1:端口号
+    	- 参数1:端口号
 
 * 返回：
-	- 正整数：成功，返回socket描述符
-  - 负数：失败错误码
+    	- 正整数：成功，返回socket描述符
+        - 负数：失败错误码
 
 ### [netlink_send_message]
 
@@ -495,18 +488,19 @@ int netlink_init(int id);
 int netlink_send_message(int sock_fd, const unsigned char *message, int len, unsigned int send_pid, unsigned int recv_pid, unsigned int group);
 ```
 
+* 所属文件：src/netlink.c
 * 作用：通过netlink向内核发送消息
 * 参数：
-	- 参数1:socket描述符
-	- 参数2:待发送消息
-	- 参数3:消息长度
-	- 参数4:发送者端口号
-	- 参数5:接收者端口号
-  - 参数6:接收者所在组
+    	- 参数1:socket描述符
+    	- 参数2:待发送消息
+    	- 参数3:消息长度
+    	- 参数4:发送者端口号
+    	- 参数5:接收者端口号
+        - 参数6:接收者所在组
 
 * 返回：
-	- 0：成功
-  - 负数：失败错误码
+    	- 0：成功
+        - 负数：失败错误码
 
 :::note
   参数5和参数6在向内核发送消息的时候一般是0，内核默认的端口号和组id为0。
@@ -518,6 +512,7 @@ int netlink_send_message(int sock_fd, const unsigned char *message, int len, uns
 int netlink_recv_message(int sock_fd, unsigned char *message, int *len);
 ```
 
+* 所属文件：src/netlink.c
 * 作用：通过netlink接收来自内核的消息
 * 参数：
 	- 参数1:socket描述符

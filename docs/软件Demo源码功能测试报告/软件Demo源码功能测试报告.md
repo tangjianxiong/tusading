@@ -1,8 +1,13 @@
 ---
-title: SWC虚拟项目
-subtitle: 测试报告
+title: 软件Demo
+subtitle: 源码功能测试报告
 author: 汤健雄
 changelog:
+- ver: 0.5
+  date: 2020.9.28
+  author: 汤健雄 
+  desc: |
+		 修改文档名称
 - ver: 0.1
   date: 2020.9.16
   author: 汤健雄 

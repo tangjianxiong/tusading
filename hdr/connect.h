@@ -1,2 +1,2 @@
-/*Verify the connection password  */
+/* Verify the connection password */
 int passwd_vertify(char *passwd, char name);
