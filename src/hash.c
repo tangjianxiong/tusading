@@ -1,3 +1,13 @@
+/*
+ * Copyright(c) 2008 - 2021 Allwinner Technology Co. Ltd.
+ * All rights reserved.
+ * 
+ * CreateDate   : 2020-09-30
+ * Author       : Jianxiong Tang
+ * LastEditTime : 2020-09-30
+ * FilePath     : /tusading/src/hash.c
+ * Description  : calculates the hash values for files and strings
+ */
 #include "../hdr/hash.h"
 
 int hash_verify(unsigned char *hashstr1, unsigned char *hashstr2)
@@ -26,12 +36,10 @@ void print_hexData(char *src, long len)
 
 int hash_file(char *filename, char *output)
 {
-	/* 本demo的hash值计算方式为md5，如需二次开发请在此重新实现该函数即可 */
 	return MDFile(filename, output);
 }
 /* Calculate the string hash value */
 int hash_str(char *str, int len, char *output)
 {
-	/* 本demo的hash值计算方式为md5，如需二次开发请在此重新实现该函数即可 */
 	return MDString(str, output);
 }

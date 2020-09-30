@@ -1,3 +1,13 @@
+/*
+ * Copyright(c) 2008 - 2021 Allwinner Technology Co. Ltd.
+ * All rights reserved.
+ * 
+ * CreateDate   : 2020-09-24
+ * Author       : Jianxiong Tang
+ * LastEditTime : 2020-09-30
+ * FilePath     : /tusading/src/md5.c
+ * Description  : calculate the hash value in MD5 mode
+ */
 #include "../hdr/md5.h"
 
 typedef struct

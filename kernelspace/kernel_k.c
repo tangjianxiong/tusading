@@ -1,3 +1,14 @@
+/*
+ * Copyright(c) 2008 - 2021 Allwinner Technology Co. Ltd.
+ * All rights reserved.
+ * 
+ * CreateDate   : 2020-09-30
+ * Author       : Jianxiong Tang
+ * LastEditTime : 2020-09-30
+ * FilePath     : /tusading/kernelspace/kernel_k.c
+ * Description  : Kernel communication module
+ */
+
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/stat.h>

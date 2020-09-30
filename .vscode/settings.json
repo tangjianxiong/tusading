@@ -1,6 +1,5 @@
 {
     "git.ignoreLimitWarning": true,
-    "restructuredtext.confPath": "y:\\work\\longan\\kernel\\linux-5.4\\Documentation",
     "C_Cpp.vcFormat.newLine.beforeOpenBrace.function": "newLine",
     "C_Cpp.vcFormat.newLine.beforeOpenBrace.lambda": "sameLine",
     "C_Cpp.vcFormat.newLine.beforeOpenBrace.namespace": "sameLine",
@@ -10,7 +9,6 @@
     "javascript.format.placeOpenBraceOnNewLineForControlBlocks": false,
     "typescript.format.placeOpenBraceOnNewLineForControlBlocks": false,
     "typescript.format.placeOpenBraceOnNewLineForFunctions": false,
-    "editor.formatOnType": true,
     "C_Cpp.clang_format_style": " Visual Studio",
     "C_Cpp.vcFormat.indent.braces": true,
     "C_Cpp.vcFormat.indent.accessSpecifiers": true,
@@ -21,5 +19,81 @@
     "markdown-pdf.styles": [
         "E:\\Markdown_css\\markdown.css"
     ],
-    "files.eol": "\n"
+    "files.eol": "\n",
+    //头文件设置
+    "fileheader.customMade": {
+        "custom_string_obkoro1_copyright": "Copyright(c) 2008 - 2021 Allwinner Technology Co. Ltd.\nAll rights reserved.\n",
+        "Date": "Do not edit", // 文件创建时间(不变)
+        "LastEditors": "Jianxiong Tang", // 文件最后编辑者
+        "LastEditTime": "Do not edit", // 文件最后编辑时间
+        "FilePath": "Do not edit", // 文件在项目中的相对路径 自动更新
+        "Description": ""
+    },
+    "fileheader.cursorMode": {
+        // 默认字段
+        "description": "",
+        "param": "",
+        "return": ""
+    },
+    "fileheader.configObj": {
+
+        "createFileTime": true,
+
+        "autoAdd": false,
+        "autoAddLine": 1000,
+        "autoAlready": true,
+        "annotationStr": {
+            "head": "/*",
+            "middle": " * @",
+            "end": " */",
+            "use": false
+        },
+        "headInsertLine": {
+            "php": 2
+        },
+        "beforeAnnotation": {
+            "文件后缀": "该文件后缀的头部注释之前添加某些内容"
+        },
+        "afterAnnotation": {
+            "文件后缀": "该文件后缀的头部注释之后添加某些内容"
+        },
+        "specialOptions": {
+            "特殊字段": "自定义比如LastEditTime/LastEditors",
+            "LastEditors": "Author",
+            "Date": "CreateDate",
+        },
+        "switch": {
+            "newlineAddAnnotation": true
+        },
+        "supportAutoLanguage": ["c", "h"],
+        "prohibitAutoAdd": [
+            "json", "md"
+        ],
+        "prohibitItemAutoAdd": [
+            "项目的全称, 整个项目禁止自动添加头部注释, 可以使用快捷键添加"
+        ],
+        "moveCursor": true,
+        "dateFormat": "YYYY-MM-DD",
+        "atSymbol": "@",
+        "atSymbolObj": {
+            "c": "",
+            "h": "",
+        },
+        "colon": ": ",
+        "colonObj": {
+            "文件后缀": "修改它的冒号"
+        },
+        "filePathColon": "/",
+        "showErrorMessage": false,
+        "wideSame": true,
+        "wideNum": 13,
+        "CheckFileChange": false,
+        "createHeader": true,
+        "useWorker": false,
+        "typeParam": true,
+        "designAddHead": false,
+        "headDesignName": "random",
+        "headDesign": false
+    },
+
 }

@@ -1,5 +1,15 @@
-#include "../hdr/base64.h"
+/*
+ * Copyright(c) 2008 - 2021 Allwinner Technology Co. Ltd.
+ * All rights reserved.
+ * 
+ * CreateDate   : 2020-09-30
+ * Author       : Jianxiong Tang
+ * LastEditTime : 2020-09-30
+ * FilePath     : /tusading/src/base64.c
+ * Description  : Base64 encoding implementation, including encoding and decoding two major functions
+ */
 
+#include "../hdr/base64.h"
 #define BASE64_PAD '='
 #define BASE64DE_FIRST '+'
 #define BASE64DE_LAST 'z'

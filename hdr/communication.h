@@ -1,3 +1,14 @@
+/*
+ * Copyright(c) 2008 - 2021 Allwinner Technology Co. Ltd.
+ * All rights reserved.
+ * 
+ * CreateDate   : 2020-09-30
+ * Author       : Jianxiong Tang
+ * LastEditTime : 2020-09-30
+ * FilePath     : /tusading/hdr/communication.h
+ * Description  : communication header file
+ */
+
 #include "netlink.h"
 
 /* send message */

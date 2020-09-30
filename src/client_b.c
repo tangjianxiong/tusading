@@ -1,3 +1,13 @@
+/*
+ * Copyright(c) 2008 - 2021 Allwinner Technology Co. Ltd.
+ * All rights reserved.
+ * 
+ * CreateDate   : 2020-09-28
+ * Author       : Jianxiong Tang
+ * LastEditTime : 2020-09-30
+ * FilePath     : /tusading/src/client_b.c
+ * Description  : client B
+ */
 #include "../hdr/encapsulation.h"
 #include "../hdr/codec.h"
 #include "../hdr/hash.h"

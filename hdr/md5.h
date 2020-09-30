@@ -1,14 +1,12 @@
-/* MD5lib.h - md5 library
- */
-
-/* Copyright (C) 1990-2, RSA Data Security, Inc. Created 1990. All
-rights reserved.
-RSA Data Security, Inc. makes no representations concerning either
-the merchantability of this software or the suitability of this
-software for any particular purpose. It is provided "as is"
-without express or implied warranty of any kind.
-These notices must be retained in any copies of any part of this
-documentation and/or software.
+/*
+ * @Copyright(c) 2008 - 2021 Allwinner Technology Co. Ltd.
+ * All rights reserved.
+ * 
+ * @CreateDate   : 2020-09-24
+ * @Author       : Jianxiong Tang
+ * @LastEditTime : 2020-09-30
+ * @FilePath     : /tusading/hdr/md5.h
+ * @Description  : md5 hash headerfile
  */
 
 /* The following makes MD default to MD5 if it has not already been

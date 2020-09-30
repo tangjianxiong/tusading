@@ -1,3 +1,13 @@
+/*
+ * Copyright(c) 2008 - 2021 Allwinner Technology Co. Ltd.
+ * All rights reserved.
+ * 
+ * CreateDate   : 2020-09-22
+ * Author       : Jianxiong Tang
+ * LastEditTime : 2020-09-30
+ * FilePath     : /tusading/hdr/netlink.h
+ * Description  : netlink header file
+ */
 #include <sys/stat.h>
 #include <unistd.h>
 #include <stdio.h>
